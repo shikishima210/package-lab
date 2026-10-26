@@ -1,0 +1,1527 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<title>パッケージ展開図ラボ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: modeling workbench — outliner | 3D stage over cutting-mat dieline sheet | properties */
+:root{
+  --bg:#eceef1; --panel:#f8f9fb; --ink:#1a2130; --muted:#5b6474; --line:#d4d9e1; --hover:#e9edf5;
+  --field:#ffffff; --accent:#2741a6; --accent-ink:#ffffff; --accent-soft:#e3e8fb; --fold:#d6352b;
+  --warn:#9a5208; --warn-bg:#fbf0e2; --ok:#2f6b46; --ok-bg:#e4f1e8;
+  --stage:#e3e6ea; --mat:#2e5a48; --mat-line:rgba(255,255,255,.10); --mat-major:rgba(255,255,255,.22); --mat-ink:rgba(255,255,255,.8);
+  --font-ui:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13161b; --panel:#191d24; --ink:#e5e8ee; --muted:#98a1b0; --line:#2b313b; --hover:#222834;
+  --field:#11141a; --accent:#8fa3ff; --accent-ink:#0f1320; --accent-soft:#232c4d; --fold:#ff7466;
+  --warn:#f2b46a; --warn-bg:#2c2215; --ok:#8fd1a7; --ok-bg:#16271d;
+  --stage:#1d2129; --mat:#22473a; --mat-line:rgba(255,255,255,.07); --mat-major:rgba(255,255,255,.16); --mat-ink:rgba(255,255,255,.75);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13161b; --panel:#191d24; --ink:#e5e8ee; --muted:#98a1b0; --line:#2b313b; --hover:#222834;
+  --field:#11141a; --accent:#8fa3ff; --accent-ink:#0f1320; --accent-soft:#232c4d; --fold:#ff7466;
+  --warn:#f2b46a; --warn-bg:#2c2215; --ok:#8fd1a7; --ok-bg:#16271d;
+  --stage:#1d2129; --mat:#22473a; --mat-line:rgba(255,255,255,.07); --mat-major:rgba(255,255,255,.16); --mat-ink:rgba(255,255,255,.75);
+  color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:13.5px;line-height:1.5}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{display:grid;grid-template-columns:250px minmax(0,1fr) 300px;height:100%}
+.left,.right{overflow-y:auto;background:var(--panel);padding-block:14px 24px;padding-inline:16px;min-width:0}
+.left{border-right:1px solid var(--line)}
+.right{border-left:1px solid var(--line)}
+main{display:grid;grid-template-rows:minmax(0,1.2fr) minmax(0,1fr);min-width:0;min-height:0}
+
+.brand h1{font-size:17px;font-weight:700;margin:0;letter-spacing:.02em}
+.brand p{color:var(--muted);font-size:12px;margin:2px 0 12px}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.12em;margin:14px 0 8px}
+.hd:first-child{margin-top:0}
+
+/* add menu */
+.addmenu{position:relative}
+.addmenu summary{list-style:none;cursor:pointer;font-size:12px;letter-spacing:0;font-weight:500;color:var(--accent);border:1px solid var(--line);background:var(--field);border-radius:6px;padding:2px 9px}
+.addmenu summary::-webkit-details-marker{display:none}
+.addmenu .menu{max-height:min(70vh,560px);overflow-y:auto;position:absolute;right:0;top:calc(100% + 4px);z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:0 10px 30px rgba(10,20,40,.18);padding:6px;width:236px;letter-spacing:0;font-weight:400;color:var(--ink)}
+.menu .grp{font-size:10.5px;color:var(--muted);padding:6px 8px 2px;letter-spacing:.1em}
+.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}
+.menu button small{display:block;color:var(--muted);font-size:11px}
+.menu button:hover{background:var(--hover)}
+
+/* outliner */
+.tree{display:grid;gap:1px}
+.ti{display:flex;align-items:center;gap:6px;border:0;background:none;text-align:left;padding:5px 6px;border-radius:6px;cursor:pointer;width:100%;font-size:13px;min-height:30px}
+.ti:hover{background:var(--hover)}
+.ti[aria-current="true"]{background:var(--accent-soft);color:var(--ink)}
+.ti .ty{font-family:var(--font-num);font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;flex:none}
+.ti .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ti .dm{font-family:var(--font-num);font-size:10.5px;color:var(--muted);flex:none}
+.ti.l1{padding-left:22px}
+.ti.l2{padding-left:38px;font-size:12.5px;color:var(--muted)}
+.ti.l2[aria-current="true"]{color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.2);flex:none}
+
+.notes{display:grid;gap:6px}
+.note{font-size:12px;padding:6px 9px;border-radius:6px;border-left:3px solid var(--warn);background:var(--warn-bg)}
+.note.ok{border-left-color:var(--ok);background:var(--ok-bg)}
+.hint{font-size:11.5px;color:var(--muted);margin:4px 0 10px}
+
+/* properties */
+.ptitle{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.ptitle input{font-size:15px;font-weight:700;border:1px solid transparent;background:transparent;border-radius:6px;padding:2px 6px;width:100%;min-width:0}
+.ptitle input:hover,.ptitle input:focus{border-color:var(--line);background:var(--field)}
+.psub{font-size:12px;color:var(--muted);margin:0 0 6px 6px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.f{display:grid;gap:3px;font-size:11.5px;color:var(--muted);min-width:0}
+.num{display:flex;align-items:center;border:1px solid var(--line);background:var(--field);border-radius:6px;padding-inline:6px;height:30px;min-width:0}
+.num input{width:100%;border:0;background:transparent;font-family:var(--font-num);font-size:12.5px;text-align:right;padding:0;min-width:0;color:var(--ink);font-variant-numeric:tabular-nums}
+.num input:focus{outline:none}
+.num:focus-within{border-color:var(--accent)}
+.num span{font-family:var(--font-num);font-size:10px;color:var(--muted);margin-left:3px}
+.num input:disabled{color:var(--muted)}
+select,.txt{height:30px;border:1px solid var(--line);border-radius:6px;background:var(--field);padding-inline:7px;width:100%;color:var(--ink);font-size:13px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:13px;cursor:pointer;color:var(--ink)}
+.check input{accent-color:var(--accent);margin-top:3px}
+.seg{display:inline-grid;grid-auto-flow:column;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--field)}
+.seg button{border:0;background:transparent;padding:3px 11px;font-size:12.5px;cursor:pointer;min-height:30px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.rowx{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.swatches{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.sw{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:2px}
+input[type=color]{width:28px;height:28px;border:1px solid var(--line);border-radius:6px;padding:2px;background:var(--field);cursor:pointer}
+.colorrow{display:grid;grid-template-columns:40px minmax(0,1fr) 28px;gap:8px;align-items:center;font-size:12.5px}
+.stack{display:grid;gap:10px}
+.btn{border:1px solid var(--line);background:var(--field);border-radius:7px;padding:5px 11px;cursor:pointer;font-size:12.5px;min-height:32px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:500}
+.btn.danger{color:var(--fold)}
+.btn.danger.armed{background:var(--fold);color:#fff;border-color:var(--fold)}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+.addgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.addgrid .btn{text-align:left}
+.plist{display:grid;gap:2px}
+.empty{color:var(--muted);font-size:12.5px;padding:8px 0}
+
+/* stages */
+.stage{position:relative;min-height:0;min-width:0;overflow:hidden}
+.stage3d{background:var(--stage);border-bottom:1px solid var(--line)}
+#gl{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none}
+.floating{background:color-mix(in srgb,var(--panel) 90%,transparent);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:10px}
+.toolbar{position:absolute;top:10px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;pointer-events:none}
+.toolbar>*{pointer-events:auto}
+.tools{display:flex;gap:2px;padding:3px;flex-wrap:wrap}
+.tool{border:0;background:none;border-radius:7px;padding:4px 9px;cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:5px;min-height:30px}
+.tool svg{width:15px;height:15px;flex:none}
+.tool:hover{background:var(--hover)}
+.tool[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.tool:disabled{opacity:.4;cursor:default;background:none}
+.toolhint{position:absolute;left:50%;top:58px;transform:translateX(-50%);font-size:12.5px;padding:5px 12px;pointer-events:none;white-space:nowrap}
+.foldbar{position:absolute;left:12px;right:12px;bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:7px 10px}
+.play{width:32px;height:32px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer;display:grid;place-items:center;flex:none}
+.track{flex:1 1 200px;min-width:0;display:grid;gap:1px}
+.track input{width:100%;accent-color:var(--accent)}
+.step{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.step b{color:var(--ink);font-weight:500}
+.pct{font-family:var(--font-num)}
+.tbtns{display:flex;gap:5px;flex:none;flex-wrap:wrap}
+.tbtns .btn{min-height:28px;padding:3px 9px;font-size:12px}
+
+.stage2d{background:var(--mat);display:grid;grid-template-rows:auto minmax(0,1fr)}
+.sheethead{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;padding-block:8px 4px;padding-inline:14px;color:var(--mat-ink);font-size:12px}
+.sheethead .ttl{font-weight:700;letter-spacing:.12em}
+.legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.legend>span{display:inline-flex;align-items:center;gap:5px}.legend i{display:block;width:16px;height:0;border-top:2px solid}.legend .zh{opacity:.65}
+.legend .lc i{border-color:#7d92ff}.legend .lf i{border-color:#ff6b5d}.legend .lp i{border-color:#7d92ff;border-top-style:dashed}.legend .lg i{border-color:#ff9b91;border-top-style:dashed;border-top-width:6px;opacity:.7}
+.sheethead .btn{background:rgba(255,255,255,.92);color:#1f3d31;border-color:transparent;min-height:28px;padding:3px 10px;font-size:12px}
+.sheethead select{width:auto;height:28px;background:rgba(255,255,255,.92);color:#1f3d31;border-color:transparent;font-size:12px}
+#sheet{width:100%;height:100%;display:block;min-height:0;touch-action:none}
+#sheet [data-panel]{cursor:pointer}
+#sheet [data-part]{cursor:grab}
+#svgOut{width:100%;height:110px;font-family:var(--font-num);font-size:11px;border:1px solid var(--line);border-radius:6px;background:var(--field);margin-top:8px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:30}
+.kbd{font-family:var(--font-num);font-size:10.5px;border:1px solid var(--line);border-radius:4px;padding:0 4px}
+
+@media (max-width:1100px){ .app{grid-template-columns:230px minmax(0,1fr) 270px} }
+@media (max-width:900px){
+  html,body{height:auto}
+  .app{grid-template-columns:1fr;height:auto}
+  main{order:1;grid-template-rows:auto auto}
+  .right{order:2;border-left:0;border-top:1px solid var(--line)}
+  .left{order:3;border-right:0;border-top:1px solid var(--line)}
+  .stage3d{height:64vh;min-height:380px}
+  .stage2d{height:56vh;min-height:340px}
+  .tool span{display:none}
+  .toolhint{top:auto;bottom:96px;white-space:normal;max-width:90%;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <aside class="left" aria-label="アウトライナー">
+    <div class="brand"><h1>パッケージ展開図ラボ</h1><p>箱と部品を組み合わせて、展開図と組み立てを確かめる</p></div>
+    <div class="hd">構成
+      <details class="addmenu" id="addMenu">
+        <summary>＋ 追加</summary>
+        <div class="menu">
+          <div class="grp">箱</div>
+          <button type="button" data-add="mailer">郵送箱<small>ふた付き・ロック爪</small></button>
+          <button type="button" data-add="tuckend">キャラメル箱<small>上下差込み・のり付け</small></button>
+          <button type="button" data-add="tray">トレー<small>4点組み立て・ふたなし</small></button>
+          <div class="grp">組み合わせ</div>
+          <button type="button" data-add="slide">スライド箱<small>トレー＋スリーブ</small></button>
+          <button type="button" data-add="kabuse">かぶせ箱<small>身＋かぶせぶた</small></button>
+          <div class="grp">特殊な形</div>
+          <button type="button" data-add="tri">三角柱<small>端ぶた＋差込み</small></button>
+          <button type="button" data-add="hex">六角柱<small>面の数は3〜48で変更可</small></button>
+          <button type="button" data-add="tube">円筒<small>丸い端ぶたのロールケース</small></button>
+          <button type="button" data-add="petal">花びら箱<small>曲線の花びらで閉じる</small></button>
+          <div class="grp">袋</div>
+          <button type="button" data-add="tearbag">開封帯付き平袋<small>ミシン目2本で引き裂いて開ける</small></button>
+          <button type="button" data-add="chipbag">ミニチップス袋<small>背貼り・上下ギザギザのシール</small></button>
+          <div class="grp">中に入れる（選択中の箱へ）</div>
+          <button type="button" data-add="platform">台座インサート<small>カップ穴付きの台</small></button>
+          <button type="button" data-add="divider">仕切り板<small>二重壁・足付き</small></button>
+        </div>
+      </details>
+    </div>
+    <div class="tree" id="tree"></div>
+    <div class="hd">チェック</div>
+    <div class="notes" id="notes"></div>
+    <div class="hd">操作</div>
+    <p class="hint">3Dで面をクリックして選択。上のツールを選んでから面をクリックすると部品を置けます。部品はドラッグで移動、<span class="kbd">Delete</span> で削除、<span class="kbd">Ctrl</span>+<span class="kbd">Z</span> で元に戻します。</p>
+  </aside>
+
+  <main>
+    <section class="stage stage3d" aria-label="3Dビュー">
+      <canvas id="gl"></canvas>
+      <div class="toolbar">
+        <div class="tools floating" role="toolbar" aria-label="配置ツール">
+          <button type="button" class="tool" data-tool="" aria-pressed="true" title="選択"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2l9 5-4 1-2 4z" fill="currentColor"/></svg><span>選択</span></button>
+          <button type="button" class="tool" data-tool="window" title="窓"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="6" width="6" height="4" rx="1" fill="currentColor"/></svg><span>窓</span></button>
+          <button type="button" class="tool" data-tool="handle" title="持ち手穴"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="6" width="12" height="4" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>持ち手穴</span></button>
+          <button type="button" class="tool" data-tool="hang" title="吊り下げ穴"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2 8h12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><span>吊り下げ穴</span></button>
+          <button type="button" class="tool" data-tool="perf" title="ミシン目"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1 6h14M1 10h14" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 1.5"/></svg><span>ミシン目</span></button>
+          <button type="button" class="tool" data-tool="text" title="文字"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h10M8 3v10" stroke="currentColor" stroke-width="1.8"/></svg><span>文字</span></button>
+        </div>
+        <div class="tools floating" aria-label="履歴">
+          <button type="button" class="tool" id="undo" title="元に戻す"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 4L2 7l3 3M2.5 7H10a4 4 0 010 8H7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>戻す</span></button>
+          <button type="button" class="tool" id="redo" title="やり直す"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 4l3 3-3 3M13.5 7H6a4 4 0 000 8h3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>やり直す</span></button>
+        </div>
+      </div>
+      <div class="toolhint floating" id="toolhint" hidden></div>
+      <div class="foldbar floating">
+        <button type="button" class="play" id="play" aria-label="組み立てを再生"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path id="playIcon" d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
+        <div class="track">
+          <input type="range" id="fold" min="0" max="1000" step="1" aria-label="組み立ての進み具合">
+          <div class="step"><span id="stepName"></span><span class="pct" id="pct"></span></div>
+        </div>
+        <div class="tbtns">
+          <button type="button" class="btn" data-go="0">展開</button>
+          <button type="button" class="btn" data-go="0.6">分解図</button>
+          <button type="button" class="btn" data-go="1">完成</button>
+          <button type="button" class="btn" id="resetView">視点</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage stage2d" aria-label="展開図">
+      <div class="sheethead">
+        <span class="ttl">展開図（印刷面）</span>
+        <span class="legend"><span class="lc"><i></i>切り線</span><span class="lf"><i></i>折り線</span><span class="lp"><i></i>ミシン目</span><span class="lg"><i></i>のり付け</span><span class="zh">ホイールで拡大・ダブルクリックで全体</span></span>
+        <span class="btnrow">
+          <select id="crease" aria-label="折り線の表し方"><option value="solid">折り線：実線</option><option value="dash">折り線：破線</option></select>
+          <button type="button" class="btn" id="saveAll">すべてSVG保存</button>
+          <button type="button" class="btn" id="copyAll">コピー</button>
+        </span>
+      </div>
+      <svg id="sheet" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+    </section>
+  </main>
+
+  <aside class="right" aria-label="プロパティ">
+    <div id="props"></div>
+    <textarea id="svgOut" hidden readonly aria-label="SVGコード"></textarea>
+  </aside>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const HAS3D = !!window.THREE;
+
+/* ================= data ================= */
+const PAPERS = [
+  {id:'coat',  name:'コートボール（裏グレー）', t:0.45, out:'#f6f6f2', inn:'#c8cbc7'},
+  {id:'white', name:'白ボール（両面白）',       t:0.55, out:'#fbfbf8', inn:'#f0f0ea'},
+  {id:'kraft', name:'クラフトボール',           t:0.50, out:'#c49a6c', inn:'#b98e60'},
+  {id:'thin',  name:'厚口画用紙',               t:0.30, out:'#ffffff', inn:'#ffffff'},
+  {id:'eflute',name:'Eフルート段ボール',        t:1.50, out:'#c9a273', inn:'#bf9566'},
+];
+const SWATCHES = ['#f6f6f2','#c8cbc7','#c49a6c','#2b2b2e','#2f3b52','#f1c7cd','#b7d2a2','#a9c3e0'];
+const TYPE = {
+  mailer:  {label:'郵送箱',       tag:'MLR'},
+  tuckend: {label:'キャラメル箱', tag:'TCK'},
+  tray:    {label:'トレー',       tag:'TRY'},
+  sleeve:  {label:'スリーブ',     tag:'SLV', fit:'sleeve'},
+  lidover: {label:'かぶせぶた',   tag:'LID', fit:'lid', flip:true},
+  platform:{label:'台座インサート',tag:'INS', fit:'insert', flip:true},
+  divider: {label:'仕切り板',     tag:'DIV', fit:'insert'},
+  prism:   {label:'角柱・円柱',   tag:'PRS'},
+  petalbox:{label:'花びら箱',     tag:'PTL'},
+  flatbag: {label:'平袋',         tag:'BAG', flip:true},
+};
+const PART = {window:'窓', handle:'持ち手穴', hang:'吊り下げ穴', perf:'ミシン目', text:'文字'};
+const SHAPES = {rect:'角丸四角', circle:'円・楕円', arch:'アーチ', heart:'ハート'};
+const HOSTS_FOR = {platform:['mailer','tray'], divider:['mailer','tray'], sleeve:['tray','mailer'], lidover:['tray']};
+const paperOf = id => PAPERS.find(p=>p.id===id) || PAPERS[0];
+
+function newBody(type, extra={}){
+  const base = {
+    mailer:  {name:'郵送箱', W:180,D:130,H:50, paper:'coat', opts:{double:true,tabs:2,tabW:20,r:8}},
+    tuckend: {name:'キャラメル箱', W:90,D:40,H:140, paper:'white', opts:{r:5}},
+    tray:    {name:'トレー', W:160,D:110,H:40, paper:'kraft', opts:{double:false}},
+    sleeve:  {name:'スリーブ', W:164,D:112,H:44, paper:'white', opts:{notch:true,nr:12}, auto:true, outC:'#2f3b52'},
+    lidover: {name:'かぶせぶた', W:164,D:114,H:30, paper:'white', opts:{double:false}, auto:true},
+    platform:{name:'台座インサート', W:170,D:120,H:22, paper:'kraft', opts:{cols:3,rows:2,dia:36}, auto:true},
+    divider: {name:'仕切り板', W:170,D:0,H:36, paper:'kraft', opts:{dir:'W',pos:0}, auto:true},
+    prism:   {name:'六角柱', W:100,D:140,H:0, paper:'white', opts:{n:6, close:'cap', tuck:true, r:6}},
+    flatbag: {name:'開封帯付き平袋', W:120,D:0,H:170, paper:'thin', opts:{tear:false, tearPos:22, band:8, top:'flap', topH:25}},
+    petalbox:{name:'花びら箱', W:150,D:0,H:70, paper:'white', opts:{n:4, tab:true}, outC:'#b7d2a2'},
+  }[type];
+  const p = paperOf(extra.paper || base.paper);
+  return Object.assign({id:nextId('b'), type, host:null, auto:false, t:p.t, outC:p.out, inC:p.inn, parts:[]}, structuredClone(base), {outC:base.outC||p.out}, extra);
+}
+function nextId(prefix){
+  let n=0; for (const b of (S?.bodies||[])){ n=Math.max(n, +b.id.slice(1)||0); for (const pt of b.parts) n=Math.max(n, +pt.id.slice(1)||0); }
+  nextId.c = Math.max(nextId.c||0, n) + 1; return prefix + nextId.c;
+}
+function defaultScene(){
+  S = {bodies:[], fold:0.66, crease:'solid', sel:null};
+  const b1 = newBody('mailer');
+  b1.parts.push({id:nextId('p'), type:'window', panel:'lid', shape:'rect', u:0, v:6, w:90, h:52, r:6});
+  b1.parts.push({id:nextId('p'), type:'text', panel:'front', u:0, v:0, text:'SAMPLE BOX', size:9, color:'#22324d'});
+  S.bodies.push(b1);
+  const b2 = newBody('platform', {host:b1.id}); S.bodies.push(b2);
+  S.sel = {kind:'body', body:b1.id};
+  return S;
+}
+let S = null;
+try { const raw = JSON.parse(localStorage.getItem('pkglab-v2')||'null'); if (raw && Array.isArray(raw.bodies)) S = raw; } catch(e){}
+if (!S) defaultScene();
+
+/* ================= history ================= */
+const hist = {undo:[], redo:[], last:0};
+function snap(){ return JSON.stringify({bodies:S.bodies, sel:S.sel}); }
+function remember(force){
+  const now = performance.now();
+  if (!force && now - hist.last < 700) { hist.last = now; return; }
+  hist.undo.push(snap()); if (hist.undo.length>80) hist.undo.shift(); hist.redo.length=0; hist.last=now; syncHistBtns();
+}
+function restore(js){ const o=JSON.parse(js); S.bodies=o.bodies; S.sel=o.sel; update({all:true}); }
+function undo(){ if(!hist.undo.length) return; hist.redo.push(snap()); restore(hist.undo.pop()); hist.last=0; syncHistBtns(); }
+function redo(){ if(!hist.redo.length) return; hist.undo.push(snap()); restore(hist.redo.pop()); hist.last=0; syncHistBtns(); }
+function syncHistBtns(){ $('#undo').disabled=!hist.undo.length; $('#redo').disabled=!hist.redo.length; }
+let saveT=null;
+function persist(){ clearTimeout(saveT); saveT=setTimeout(()=>{ try{ localStorage.setItem('pkglab-v2', JSON.stringify(S)); }catch(e){} }, 400); }
+
+/* ================= 2D geometry ================= */
+const f3 = n => +(+n).toFixed(3);
+const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const ease = x => { x=clamp01(x); return x*x*(3-2*x); };
+const rectN = (x0,y0,x1,y1,r=0) => [[x0,y0,r],[x1,y0,r],[x1,y1,r],[x0,y1,r]];
+const bboxOf = pts => { let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; for(const p of pts){ x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]); } return [x0,y0,x1,y1]; };
+const inside = (b,R,m) => b[0]>=R[0]+m-1e-6 && b[1]>=R[1]+m-1e-6 && b[2]<=R[2]-m+1e-6 && b[3]<=R[3]-m+1e-6;
+const overlaps = (b,R) => b[0]<R[2]-1e-6 && b[2]>R[0]+1e-6 && b[1]<R[3]-1e-6 && b[3]>R[1]+1e-6;
+const centroid = pts => { const s=pts.reduce((a,q)=>[a[0]+q[0],a[1]+q[1]],[0,0]); return [s[0]/pts.length, s[1]/pts.length]; };
+
+function outline(nodes){
+  const n=nodes.length, corners=[];
+  for (let i=0;i<n;i++){
+    const P=nodes[i], A=nodes[(i-1+n)%n], B=nodes[(i+1)%n], r=P[2]||0;
+    const plain={p1:[P[0],P[1]],p2:[P[0],P[1]],arc:null};
+    if (r<=0.01){ corners.push(plain); continue; }
+    let u1=[A[0]-P[0],A[1]-P[1]], u2=[B[0]-P[0],B[1]-P[1]];
+    const l1=Math.hypot(u1[0],u1[1]), l2=Math.hypot(u2[0],u2[1]);
+    if (l1<1e-6||l2<1e-6){ corners.push(plain); continue; }
+    u1=[u1[0]/l1,u1[1]/l1]; u2=[u2[0]/l2,u2[1]/l2];
+    const th=Math.acos(Math.max(-1,Math.min(1,u1[0]*u2[0]+u1[1]*u2[1])));
+    if (th<0.02||th>Math.PI-0.02){ corners.push(plain); continue; }
+    let d=r/Math.tan(th/2), rr=r; const dmax=Math.min(l1,l2)*0.5;
+    if (d>dmax){ d=dmax; rr=d*Math.tan(th/2); }
+    const p1=[P[0]+u1[0]*d,P[1]+u1[1]*d], p2=[P[0]+u2[0]*d,P[1]+u2[1]*d];
+    let bx=u1[0]+u2[0], by=u1[1]+u2[1]; const bl=Math.hypot(bx,by); bx/=bl; by/=bl;
+    const h=rr/Math.sin(th/2), C=[P[0]+bx*h,P[1]+by*h];
+    const a1=Math.atan2(p1[1]-C[1],p1[0]-C[0]), a2=Math.atan2(p2[1]-C[1],p2[0]-C[0]);
+    let da=a2-a1; while(da>Math.PI)da-=2*Math.PI; while(da<-Math.PI)da+=2*Math.PI;
+    corners.push({p1,p2,arc:{C,r:rr,a1,da,sw:da>0?1:0}});
+  }
+  const segs=[], poly=[];
+  for (let i=0;i<n;i++){
+    const c=corners[i], nx=corners[(i+1)%n];
+    if (c.arc){
+      const k=Math.max(4,Math.ceil(Math.abs(c.arc.da)/(Math.PI/18)));
+      for (let j=0;j<=k;j++){ const a=c.arc.a1+c.arc.da*j/k; poly.push([c.arc.C[0]+c.arc.r*Math.cos(a), c.arc.C[1]+c.arc.r*Math.sin(a)]); }
+      segs.push({t:'A',a:c.p1,b:c.p2,r:c.arc.r,sw:c.arc.sw});
+    } else poly.push(c.p1);
+    if (dist(c.p2,nx.p1)>1e-6) segs.push({t:'L',a:c.p2,b:nx.p1});
+  }
+  return {segs, poly};
+}
+function segsToD(segs, ox, oy, closed){
+  let d='', cur=null;
+  for (const s of segs){
+    if (!cur || dist(cur,s.a)>1e-6) d+=`M${f3(s.a[0]+ox)} ${f3(s.a[1]+oy)}`;
+    if (s.t==='L') d+=`L${f3(s.b[0]+ox)} ${f3(s.b[1]+oy)}`;
+    else d+=`A${f3(s.r)} ${f3(s.r)} 0 0 ${s.sw} ${f3(s.b[0]+ox)} ${f3(s.b[1]+oy)}`;
+    cur=s.b;
+  }
+  return closed ? d+'Z' : d;
+}
+function mergeIv(iv){ iv.sort((a,b)=>a[0]-b[0]); const out=[]; for (const v of iv){ const l=out[out.length-1]; if (l && v[0]<=l[1]+1e-6) l[1]=Math.max(l[1],v[1]); else out.push([v[0],v[1]]); } return out; }
+function unionLines(segs, subtract){
+  const groups=new Map();
+  const key=s=>{ const a=s.a,b=s.b; let ux=b[0]-a[0], uy=b[1]-a[1]; const l=Math.hypot(ux,uy); if (l<1e-6) return null;
+    ux/=l; uy/=l; if (ux<-1e-9 || (Math.abs(ux)<=1e-9 && uy<0)){ ux=-ux; uy=-uy; }
+    const c=-uy*a[0]+ux*a[1], ta=ux*a[0]+uy*a[1], tb=ux*b[0]+uy*b[1];
+    return [Math.round(Math.atan2(uy,ux)*2e4)+'|'+Math.round(c*200), Math.min(ta,tb), Math.max(ta,tb), ux, uy, c]; };
+  for (const s of segs){ const k=key(s); if(!k) continue; if(!groups.has(k[0])) groups.set(k[0],{ux:k[3],uy:k[4],c:k[5],iv:[],sub:[]}); groups.get(k[0]).iv.push([k[1],k[2]]); }
+  for (const s of subtract||[]){ const k=key(s); if(!k) continue; const g=groups.get(k[0]); if(g) g.sub.push([k[1],k[2]]); }
+  const out=[];
+  for (const g of groups.values()){
+    let iv=mergeIv(g.iv);
+    for (const sb of g.sub) iv=iv.flatMap(([a,b])=>{ if(sb[1]<=a+1e-6||sb[0]>=b-1e-6) return [[a,b]]; const r=[]; if(sb[0]>a+1e-6) r.push([a,sb[0]]); if(sb[1]<b-1e-6) r.push([sb[1],b]); return r; });
+    const P=t=>[-g.uy*g.c+g.ux*t, g.ux*g.c+g.uy*t];
+    for (const [a,b] of iv){ if (b-a<1e-3) continue; out.push({t:'L',a:P(a),b:P(b)}); }
+  }
+  return out;
+}
+const circleNodes = (cx,cy,rx,ry,n=72) => Array.from({length:n},(_,i)=>{ const a=i/n*Math.PI*2; return [cx+Math.cos(a)*rx, cy+Math.sin(a)*ry, 0]; });
+
+/* part shapes in face-local coords (u right, v up) */
+// perforation: lines through (u,v) at angle `ang` (0 = along the face's horizontal), clipped to the panel outline
+const perfAngle = pt => pt.ang ?? (pt.dir==='v' ? 90 : 0);
+function lineInPoly(poly, q, d){
+  let t0=Infinity, t1=-Infinity;
+  for (let i=0;i<poly.length;i++){ const A=poly[i], B=poly[(i+1)%poly.length], ex=B[0]-A[0], ey=B[1]-A[1], den=d[0]*ey-d[1]*ex;
+    if (Math.abs(den)<1e-9) continue; const wx=A[0]-q[0], wy=A[1]-q[1], t=(wx*ey-wy*ex)/den, sp=(wx*d[1]-wy*d[0])/den;
+    if (sp>=-1e-9 && sp<=1+1e-9){ t0=Math.min(t0,t); t1=Math.max(t1,t); } }
+  return t1-t0>1e-3 ? [t0,t1] : null;
+}
+function perfGeom(p, pt){
+  const fr=p.fr, a=perfAngle(pt)*Math.PI/180, ca=Math.cos(a), sa=Math.sin(a);
+  const d=[ca*fr.rt[0]+sa*fr.up[0], ca*fr.rt[1]+sa*fr.up[1]], nrm=[-sa*fr.rt[0]+ca*fr.up[0], -sa*fr.rt[1]+ca*fr.up[1]];
+  const c0=toNet(fr,pt.u||0,pt.v||0), offs=pt.band>0?[-pt.band/2,pt.band/2]:[0], segs=[];
+  let lo=Infinity, hi=-Infinity;
+  for (const o of offs){ const q=[c0[0]+nrm[0]*o, c0[1]+nrm[1]*o], r=lineInPoly(p.pts,q,d); if(!r) continue;
+    lo=Math.min(lo,r[0]); hi=Math.max(hi,r[1]); segs.push({a:[q[0]+d[0]*r[0], q[1]+d[1]*r[0]], b:[q[0]+d[0]*r[1], q[1]+d[1]*r[1]]}); }
+  if (!segs.length){ lo=-10; hi=10; }
+  const h=(pt.band||0)/2+3, P=(t,o)=>[c0[0]+d[0]*t+nrm[0]*o, c0[1]+d[1]*t+nrm[1]*o];
+  return {segs, poly:[P(lo,-h),P(hi,-h),P(hi,h),P(lo,h)]};
+}
+function partLocal(pt){
+  const hw=pt.w/2, hh=pt.h/2;
+  if (pt.type==='handle'){ const r=Math.min(hh,hw); return [[-hw,-hh,r],[hw,-hh,r],[hw,hh,r],[-hw,hh,r]]; }
+  if (pt.type==='hang'){
+    const R=pt.h/2, a=Math.max(0,hw-R), rc=pt.dia/2, n=144, out=[];
+    for (let i=0;i<n;i++){ const th=i/n*Math.PI*2, dx=Math.cos(th), dy=Math.sin(th), ax=Math.abs(dx), ay=Math.abs(dy);
+      let s = ay>1e-6 ? R/ay : 1e9;
+      if (s*ax > a){ const disc=a*a*ax*ax - a*a + R*R; s = a*ax + Math.sqrt(Math.max(0,disc)); }
+      s=Math.max(s, rc); out.push([dx*s, dy*s, 0]); }
+    return out;
+  }
+  if (pt.shape==='circle') return circleNodes(0,0,hw,hh);
+  if (pt.shape==='heart'){ const n=96; return Array.from({length:n},(_,i)=>{const t=i/n*Math.PI*2; const x=16*Math.sin(t)**3, y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t); return [x/32*pt.w, (y+2.5)/29*pt.h, 0];}); }
+  if (pt.shape==='arch'){ const ra=Math.min(hw, pt.h); return [[-hw,-hh,0],[hw,-hh,0],[hw,hh,ra],[-hw,hh,ra]]; }
+  const r=Math.min(pt.r||0, hw, hh); return [[-hw,-hh,r],[hw,-hh,r],[hw,hh,r],[-hw,hh,r]];
+}
+const measureCtx = document.createElement('canvas').getContext('2d');
+function textWidth(pt){ measureCtx.font = `700 100px "Zen Kaku Gothic New", sans-serif`; return measureCtx.measureText(pt.text||' ').width/100*pt.size; }
+
+/* ================= body builders (net coords, mm, viewed from the printed side) ================= */
+function mkAdd(list){ return o => { const p=Object.assign({holes:[],off:0,ang:90,st:[0,1],ph:'b'},o); list.push(p); return p; }; }
+// glue flap width follows the panels it joins: 30% of the short side, kept between 5 and 15 mm
+const glueW=(...dims)=>Math.max(5, Math.min(15, Math.min(...dims)*0.3));
+const mirX = (W, pts) => pts.map(p=>[W-p[0],p[1],p[2]||0]);
+const glueFlap=(x,len,G,dir=1)=>{ const e=Math.min(1.5,len*0.05), tp=Math.min(G*0.35,len*0.12); return [[x,e],[x+dir*G,e+tp],[x+dir*G,len-e-tp],[x,len-e]]; };
+
+function buildBox(d, o, withLid){
+  const {W,D,H,t}=d, L=[], add=mkAdd(L);
+  const m=t+0.5, Hb=withLid?H+t:H, Dl=D, Ht=Math.max(8,H-2), He=Math.max(6,H-t-1), g=2, tabL=6;
+  const F=Math.max(6, Math.min(D/2-2, Math.max(10,H*0.8)));
+  const Hi=Math.max(6,H-2*t-0.5), s0=1.5, s1=D-1.5, R=o.r??6;
+  add({id:'bottom', name:'底', label:'底', pts:rectN(0,0,W,D)});
+  add({id:'front', name:'前面', label:'前面', parent:'bottom', hinge:[[0,D],[W,D]], pts:rectN(0,D,W,D+H), st:[0,.3]});
+  add({id:'back', name:'背面', label:'背面', parent:'bottom', hinge:[[0,0],[W,0]], pts:rectN(0,-Hb,W,0), st:[0,.3]});
+  const tabs = withLid ? (o.tabs||0) : 0, tw=o.tabW||20;
+  const centers = tabs===1?[W/2]:tabs===2?[W*.25,W*.75]:[];
+  if (withLid){
+    add({id:'lid', name:'ふた', label:'ふた', parent:'back', hinge:[[0,-Hb],[W,-Hb]], pts:rectN(0,-Hb-Dl,W,-Hb), ph:'c', st:[.3,1]});
+    const y0=-Hb-Dl, y1=y0-Ht, rt=Math.min(R,Ht/2);
+    const tuck=[[m,y0,0],[W-m,y0,0],[W-m,y1,rt]];
+    for (const cx of centers.slice().sort((a,b)=>b-a)) tuck.push([cx+tw/2,y1,0],[cx+tw/2,y1-tabL,1.5],[cx-tw/2,y1-tabL,1.5],[cx-tw/2,y1,0]);
+    tuck.push([m,y1,rt]);
+    add({id:'tuck', name:'ふたの差込み', label:'差込み', parent:'lid', hinge:[[m,y0],[W-m,y0]], pts:tuck, ph:'c', st:[0,.35], off:1});
+    const earR=[[0,-Hb-g,0],[-He,-Hb-g,R],[-He,-Hb-Dl+g,R],[0,-Hb-Dl+g,0]];
+    add({id:'earR', name:'ふたの耳（右）', parent:'lid', hinge:[[0,-Hb-g],[0,-Hb-Dl+g]], pts:earR, ph:'c', st:[0,.35], off:3});
+    add({id:'earL', name:'ふたの耳（左）', parent:'lid', hinge:[[W,-Hb-g],[W,-Hb-Dl+g]], pts:mirX(W,earR), ph:'c', st:[0,.35], off:3});
+  }
+  const side=rectN(-H,0,0,D);
+  add({id:'right', name:'右側面', label:'右側面', parent:'bottom', hinge:[[0,0],[0,D]], pts:side, st:[.45,.75]});
+  add({id:'left', name:'左側面', label:'左側面', parent:'bottom', hinge:[[W,0],[W,D]], pts:mirX(W,side), st:[.45,.75]});
+  if (o.double){
+    const inR=[[-H,s0,0],[-H,s1,0],[-H-Hi,s1,2],[-H-Hi,s0,2]];
+    add({id:'innerR', name:'右側面の内壁', parent:'right', hinge:[[-H,s0],[-H,s1]], pts:inR, ang:180, st:[.75,1], off:-2});
+    add({id:'innerL', name:'左側面の内壁', parent:'left', hinge:[[W+H,s0],[W+H,s1]], pts:mirX(W,inR), ang:180, st:[.75,1], off:-2});
+  }
+  const cfF=[[0,D,0],[0,D+H-1,0],[-F+2,D+H-1,0],[-F,D+H-3,0],[-F,D,0]];
+  const cfB=[[0,0,0],[0,-Hb+1,0],[-F+2,-Hb+1,0],[-F,-Hb+3,0],[-F,0,0]];
+  add({id:'cfFR', name:'角フラップ（前右）', parent:'front', hinge:[[0,D],[0,D+H-1]], pts:cfF, st:[.25,.5], off:1});
+  add({id:'cfFL', name:'角フラップ（前左）', parent:'front', hinge:[[W,D],[W,D+H-1]], pts:mirX(W,cfF), st:[.25,.5], off:1});
+  add({id:'cfBR', name:'角フラップ（後右）', parent:'back', hinge:[[0,0],[0,-Hb+1]], pts:cfB, st:[.25,.5], off:1});
+  add({id:'cfBL', name:'角フラップ（後左）', parent:'back', hinge:[[W,0],[W,-Hb+1]], pts:mirX(W,cfB), st:[.25,.5], off:1});
+  const extra=[];
+  if (centers.length){
+    const sh=Math.max(1.5,2*t+0.6), sw=tw+1, bottom=L[0];
+    for (const cx of centers) bottom.holes.push({nodes:rectN(cx-sw/2,D-1-sh,cx+sw/2,D-1)});
+    if (centers.length*(tw+8) > W-2*m) extra.push('ロック爪が差込み部の幅に収まりません。爪の幅を狭くしてください。');
+  }
+  return {panels:L, warns:extra};
+}
+function buildTuck(d,o){
+  const {W,D,H,t}=d, L=[], add=mkAdd(L);
+  const G=glueW(D,W), m=t+0.5, T=Math.min(Math.max(10,D*0.6),22), R=Math.min(o.r??5,T/2), Dh=Math.max(6,Math.min(D*0.85, W/2-2));
+  const x1=W, x2=W+D, x3=2*W+D, x4=2*W+2*D;
+  add({id:'back', name:'背面', label:'背面', pts:rectN(0,0,W,H)});
+  add({id:'sideR', name:'側面（右）', label:'側面', parent:'back', hinge:[[x1,0],[x1,H]], pts:rectN(x1,0,x2,H), st:[0,.4]});
+  add({id:'front', name:'前面', label:'前面', parent:'sideR', hinge:[[x2,0],[x2,H]], pts:rectN(x2,0,x3,H), st:[.3,.7]});
+  add({id:'sideL', name:'側面（左）', label:'側面', parent:'front', hinge:[[x3,0],[x3,H]], pts:rectN(x3,0,x4,H), st:[.6,.9]});
+  { const gp=glueFlap(x4,H,G); add({id:'glue', name:'のりしろ', parent:'sideL', hinge:[gp[0],gp[3]], pts:gp, st:[.85,1], off:1}); }
+  for (const [end,sg] of [['T',-1],['B',1]]){
+    const y0 = end==='T'?0:H, yy = v => y0 + sg*v;
+    add({id:'lid'+end, name:end==='T'?'上ぶた':'下ぶた', label:end==='T'?'上ぶた':'下ぶた', parent:'back', hinge:[[0,y0],[W,y0]], pts:rectN(0,Math.min(y0,yy(D)),W,Math.max(y0,yy(D))), ph:'c', st:[.25,.9]});
+    add({id:'tuck'+end, name:(end==='T'?'上':'下')+'の差込み', parent:'lid'+end, hinge:[[m,yy(D)],[W-m,yy(D)]], pts:[[m,yy(D),0],[W-m,yy(D),0],[W-m,yy(D+T),R],[m,yy(D+T),R]], ph:'c', st:[.15,.45], off:1});
+    for (const [sid,xa,xb] of [['R',x1,x2],['L',x3,x4]]){
+      add({id:'dust'+end+sid, name:(end==='T'?'上':'下')+'の耳（'+(sid==='R'?'右':'左')+'）', parent:'side'+sid, hinge:[[xa+0.5,y0],[xb-0.5,y0]],
+        pts:[[xa+0.5,y0,0],[xb-0.5,y0,0],[xb-2,yy(Dh),3],[xa+2,yy(Dh*0.55),0]], ph:'c', st:[0,.3], off:1});
+    }
+  }
+  return {panels:L, warns:[]};
+}
+function buildSleeve(d,o){
+  const {W,H,t}=d, Lg=d.D, L=[], add=mkAdd(L), G=glueW(W,H);
+  add({id:'bottom', name:'底面', label:'底面', pts:rectN(0,0,W,Lg)});
+  add({id:'sideA', name:'側面（右）', label:'側面', parent:'bottom', hinge:[[0,0],[0,Lg]], pts:rectN(-H,0,0,Lg), st:[0,.4]});
+  const x0=-H, x1=-H-W, xc=-H-W/2, rn=Math.min(o.nr||12, W/3, Lg/4);
+  let top=[[x0,0,0],[x0,Lg,0]];
+  if (o.notch){
+    top.push([xc+rn,Lg,0]); for (let k=1;k<18;k++){ const a=k/18*Math.PI; top.push([xc+rn*Math.cos(a), Lg-rn*Math.sin(a),0]); } top.push([xc-rn,Lg,0]);
+    top.push([x1,Lg,0],[x1,0,0]);
+    top.push([xc-rn,0,0]); for (let k=1;k<18;k++){ const a=k/18*Math.PI; top.push([xc-rn*Math.cos(a), rn*Math.sin(a),0]); } top.push([xc+rn,0,0]);
+  } else top.push([x1,Lg,0],[x1,0,0]);
+  add({id:'top', name:'天面', label:'天面', parent:'sideA', hinge:[[x0,0],[x0,Lg]], pts:top, st:[.3,.7]});
+  add({id:'sideB', name:'側面（左）', label:'側面', parent:'top', hinge:[[x1,0],[x1,Lg]], pts:rectN(x1-H,0,x1,Lg), st:[.6,.9]});
+  const xg=x1-H;
+  { const gp=glueFlap(xg,Lg,G,-1); add({id:'glue', name:'のりしろ', parent:'sideB', hinge:[gp[0],gp[3]], pts:gp, st:[.85,1], off:1}); }
+  return {panels:L, warns:[]};
+}
+function buildPlatform(d,o){
+  const {W,D,t}=d, h=d.H, L=[], add=mkAdd(L), fo=Math.min(15, Math.max(8,D*0.15));
+  const topP=add({id:'top', name:'天板', label:'天板', pts:rectN(0,0,W,D)});
+  const cols=Math.max(1,o.cols|0), rows=Math.max(1,o.rows|0), r=o.dia/2, warns=[];
+  if (o.dia>0){
+    for (let i=0;i<cols;i++) for (let j=0;j<rows;j++) topP.holes.push({nodes:circleNodes(W*(i+.5)/cols, D*(j+.5)/rows, r, r)});
+    if (o.dia > Math.min(W/cols, D/rows)-6) warns.push('台座の穴が大きすぎて、隣の穴や端とくっついています。直径か数を減らしてください。');
+  }
+  add({id:'legF', name:'脚（前）', label:'脚', parent:'top', hinge:[[0,D],[W,D]], pts:rectN(0,D,W,D+h), st:[0,.5]});
+  add({id:'footF', name:'足（前）', parent:'legF', hinge:[[1,D+h],[W-1,D+h]], pts:rectN(1,D+h,W-1,D+h+fo), st:[.5,1]});
+  add({id:'legB', name:'脚（後）', label:'脚', parent:'top', hinge:[[0,0],[W,0]], pts:rectN(0,-h,W,0), st:[0,.5]});
+  add({id:'footB', name:'足（後）', parent:'legB', hinge:[[1,-h],[W-1,-h]], pts:rectN(1,-h-fo,W-1,-h), st:[.5,1]});
+  return {panels:L, warns};
+}
+function buildDivider(d,o){
+  const len=d.W, h=d.H, fo=14, L=[], add=mkAdd(L);
+  add({id:'foot', name:'足', pts:rectN(0,0,len,fo)});
+  add({id:'wall', name:'仕切り（表）', label:'仕切り', parent:'foot', hinge:[[0,fo],[len,fo]], pts:rectN(0,fo,len,fo+h), st:[0,.4]});
+  add({id:'wall2', name:'仕切り（裏）', parent:'wall', hinge:[[0,fo+h],[len,fo+h]], pts:rectN(0,fo+h,len,fo+2*h-0.5), ang:180, st:[.4,.75], off:-1});
+  add({id:'foot2', name:'足（裏）', parent:'wall2', hinge:[[0.5,fo+2*h-0.5],[len-0.5,fo+2*h-0.5]], pts:rectN(0.5,fo+2*h-0.5,len-0.5,2*fo+2*h-0.5), ang:-90, st:[.75,1], off:1});
+  return {panels:L, warns:[]};
+}
+const clampInt=(v,a,b)=>Math.max(a,Math.min(b,Math.round(+v||a)));
+function regPoly(C, R, start, step, n){ return Array.from({length:n},(_,k)=>{ const a=start+k*step; return [C[0]+R*Math.cos(a), C[1]+R*Math.sin(a), 0]; }); }
+function buildPrism(d,o){
+  const n=clampInt(o.n,3,48), R=d.W/2, s=2*R*Math.sin(Math.PI/n), a=R*Math.cos(Math.PI/n), Lg=d.D, curved=n>=10;
+  const L=[], add=mkAdd(L), warns=[], G=curved?glueW(R):glueW(s,Lg), ang=360/n;
+  for (let i=0;i<n;i++) add({id:'s'+i, name:curved?`胴（${i+1}）`:`側面${i+1}`, label:i===0?(curved?'胴':'側面1'):(!curved?`側面${i+1}`:null),
+    parent:i?'s'+(i-1):null, hinge:i?[[i*s,0],[i*s,Lg]]:undefined, pts:rectN(i*s,0,(i+1)*s,Lg), ang, soft:curved&&i>0});
+  const xg=n*s;
+  { const gp=glueFlap(xg,Lg,G); add({id:'glue', name:'のりしろ', parent:'s'+(n-1), hinge:[gp[0],gp[3]], pts:gp, ang, off:1}); }
+  let close=o.close||'cap';
+  if (close==='petal' && n>8){ close='cap'; warns.push('花びら閉じは面の数8以下で使えます。端ぶたにしています。'); }
+  for (const [end,y0,sg] of [['A',0,-1],['B',Lg,1]]){
+    const endName = end==='A'?'手前':'奥';
+    if (close==='petal'){
+      const B=0.16*s, h=w=>(s/2)*(1-w/a)+B*Math.sin(Math.PI*w/a), m=20;
+      for (let i=0;i<n;i++){
+        const x0=i*s, xc=x0+s/2, right=[], left=[];
+        for (let j=1;j<m;j++){ const w=a*0.97*j/m; right.push([xc+h(w), y0+sg*w, 0]); left.unshift([xc-h(w), y0+sg*w, 0]); }
+        const pts=[[x0,y0,0],[x0+s,y0,0],...right,[xc,y0+sg*a*0.97,Math.min(4,s/6)],...left];
+        add({id:`pet${end}${i}`, name:`花びら（${endName}${i+1}）`, parent:'s'+i, hinge:[[x0,y0],[x0+s,y0]], pts, ph:'c', st:[i/n*0.6, i/n*0.6+0.4], off:1+i*0.8});
+      }
+    } else {
+      const C=[s/2, y0+sg*a];
+      let pts;
+      const t0=Math.atan2(y0-C[1], 0-C[0]), t1=Math.atan2(y0-C[1], s-C[0]);
+      let step=t1-t0; while(step>Math.PI) step-=2*Math.PI; while(step<-Math.PI) step+=2*Math.PI;
+      if (curved){
+        const long = step>0 ? step-2*Math.PI : step+2*Math.PI, m=96;
+        pts=[[0,y0,0],[s,y0,0]]; for (let k=1;k<m;k++){ const t=t1+long*k/m; pts.push([C[0]+R*Math.cos(t), C[1]+R*Math.sin(t), 0]); }
+      } else pts=regPoly(C,R,t0,step,n);
+      add({id:'cap'+end, name:`端ぶた（${endName}）`, label:'端ぶた', parent:'s0', hinge:[[0,y0],[s,y0]], pts, ph:'c', st:[.3,1]});
+      if (!curved && o.tuck!==false){
+        const k=Math.floor(n/2), A=pts[k], Bv=pts[(k+1)%n];
+        const ux=(Bv[0]-A[0])/s, uy=(Bv[1]-A[1])/s, M=[(A[0]+Bv[0])/2,(A[1]+Bv[1])/2];
+        let nx=M[0]-C[0], ny=M[1]-C[1]; const nl=Math.hypot(nx,ny); nx/=nl; ny/=nl;
+        const T=Math.min(a*0.9, 22), rr=Math.min(o.r??6, T/2), e1=[A[0]+ux,A[1]+uy], e2=[Bv[0]-ux,Bv[1]-uy];
+        const tp=[[e1[0],e1[1],0],[e2[0],e2[1],0],[e2[0]+nx*T-ux*2,e2[1]+ny*T-uy*2,rr],[e1[0]+nx*T+ux*2,e1[1]+ny*T+uy*2,rr]];
+        add({id:'tuck'+end, name:`差込み（${endName}）`, parent:'cap'+end, hinge:[e1,e2], pts:tp, ph:'c', st:[0,.45], off:1});
+      }
+    }
+  }
+  return {panels:L, warns, info:{s,a,n,curved}};
+}
+function clipSlab(poly, w0, w1){
+  const pass=(pts,keep,w)=>{ const out=[]; for (let i=0;i<pts.length;i++){ const A=pts[i], B=pts[(i+1)%pts.length], ka=keep(A), kb=keep(B);
+      if (ka) out.push(A); if (ka!==kb){ const t=(w-A[1])/(B[1]-A[1]); out.push([A[0]+(B[0]-A[0])*t, w, 0]); } } return out; };
+  let p=pass(poly, P=>P[1]>=w0-1e-9, w0); p=pass(p, P=>P[1]<=w1+1e-9, w1);
+  return p.filter((q,i)=>{ const r=p[(i+1)%p.length]; return Math.hypot(q[0]-r[0],q[1]-r[1])>1e-6; });
+}
+function petalProfile(Lp,k,a,H){
+  let best=null; const l=Lp/k;
+  for (let A0=30;A0<=115;A0+=1) for (let th=0;th<=180;th+=2){ const dl=th/k; let x=0,z=0;
+    for (let j=0;j<k;j++){ const ph=(A0+j*dl)*Math.PI/180; x-=l*Math.cos(ph); z+=l*Math.sin(ph); }
+    const e=(x-a*0.95)**2+(z-H)**2; if (!best||e<best.e) best={e,A0,dl}; }
+  return best;
+}
+function buildPetalBox(d,o){
+  const n=clampInt(o.n,3,8), R=d.W/2, s=2*R*Math.sin(Math.PI/n), a=R*Math.cos(Math.PI/n), H=d.H, k=12;
+  const L=[], add=mkAdd(L);
+  const base=regPoly([0,0],R,Math.PI/2+Math.PI/n,2*Math.PI/n,n);
+  add({id:'base', name:'底', label:'底', pts:base});
+  const qa=(Math.PI/4)*(3*(a+H)-Math.sqrt((3*a+H)*(a+3*H)));
+  const Lp=qa*1.05, prof=petalProfile(Lp,k,a,H), l=Lp/k;
+  const tabI=0, slitI=Math.floor(n/2), tw=Math.min(s*0.45,40), th=Math.min(Lp*0.18,26);
+  const hb=w=>(s/2)*Math.pow(Math.max(0,1-w/Lp),0.85)+0.22*s*Math.sin(Math.PI*Math.min(w,Lp)/Lp);
+  const order=[...Array(n).keys()].filter(i=>!(o.tab&&i===tabI)); if (o.tab) order.push(tabI);
+  for (let i=0;i<n;i++){
+    const v0=base[i], v1=base[(i+1)%n], M=[(v0[0]+v1[0])/2,(v0[1]+v1[1])/2];
+    const e=[(v1[0]-v0[0])/s,(v1[1]-v0[1])/s], ml=Math.hypot(M[0],M[1]), no=[M[0]/ml,M[1]/ml];
+    const toN=(u,w)=>[M[0]+u*e[0]+w*no[0], M[1]+u*e[1]+w*no[1]];
+    const isTab=o.tab&&i===tabI, Lend=isTab?Lp+th:Lp, m=30;
+    const hw=w=>isTab&&w>Lp*0.72 ? Math.max(hb(w), tw/2) : hb(w);
+    const right=[], left=[];
+    for (let j=1;j<m;j++){ const w=Lend*j/m; right.push([hw(w),w,0]); left.unshift([-hw(w),w,0]); }
+    const tip = isTab ? [[tw/2,Lend,tw/3],[-tw/2,Lend,tw/3]] : [[0,Lp,0]];
+    const poly=[[-s/2,0,0],[s/2,0,0],...right,...tip,...left];
+    const strips=Math.ceil(Lend/l-1e-6), rank=order.indexOf(i);
+    for (let j=0;j<strips;j++){
+      const w0=j*l, w1=Math.min(Lend,(j+1)*l), cp=clipSlab(poly,w0,w1);
+      if (cp.length<3) continue;
+      const atW=cp.filter(q=>Math.abs(q[1]-w0)<1e-6).map(q=>q[0]);
+      const hl=Math.min(...atW), hr=Math.max(...atW);
+      const pts=cp.map(q=>{ const P=toN(q[0],q[1]); return [P[0],P[1],q[2]||0]; });
+      const p=add({id:`p${i}_${j}`, name:`花びら${i+1}`, parent:j?`p${i}_${j-1}`:'base', hinge:[toN(hl,w0),toN(hr,w0)], pts,
+        ang:j?prof.dl:prof.A0, soft:j>0, st:[rank*0.1, Math.min(1, rank*0.1+0.55)], off:1+rank*1.4});
+      if (o.tab && i===slitI && w0<=Lp*0.78 && w1>Lp*0.78){
+        const sw=tw/2+1.5, sl=[[-sw,Lp*0.78-0.4],[sw,Lp*0.78-0.4],[sw,Lp*0.78+0.4],[-sw,Lp*0.78+0.4]].map(([u,w])=>{ const P=toN(u,w); return [P[0],P[1],0]; });
+        p.holes.push({nodes:sl});
+      }
+    }
+  }
+  const warns = prof.e>25 ? ['この高さと直径では花びらが中央でうまく合いません。高さか直径を調整してください。'] : [];
+  return {panels:L, warns};
+}
+// zigzag (pinking-shear) edge from x0 to x1 on baseline y; teeth point toward `dir` (−1 = up, +1 = down); ends sit on the baseline
+function zigEdge(x0,x1,y,dir,a){
+  const span=Math.abs(x1-x0), step0=a*1.15; let n=Math.max(2, Math.round(span/step0)); if (n%2) n++;
+  return Array.from({length:n+1},(_,k)=>[x0+(x1-x0)*k/n, y+(k%2?dir*a:0), 0]);
+}
+function buildChipBag(d,o){
+  const W=d.W, H=d.H, g=glueW(W*0.4,H*0.4), Wb=W/2+g/2, L=[], add=mkAdd(L), perfs=[], slits=[], warns=[], guides=[];
+  const zig=o.edge==='zig', a=Math.max(1.5,Math.min(4,H*0.025));
+  const panel=(xa,xb)=>{ const top=zig?zigEdge(xa,xb,0,-1,a):[[xa,0,0],[xb,0,0]], bot=zig?zigEdge(xb,xa,H,1,a):[[xb,H,0],[xa,H,0]]; return [...top,...bot]; };
+  add({id:'front', name:'表面', label:'表面', pts:panel(0,W)});
+  add({id:'backA', name:'裏面（左）', label:'裏面', parent:'front', hinge:[[0,0],[0,H]], pts:panel(-Wb,0), ang:180, st:[0,.5], off:-2});
+  add({id:'backB', name:'裏面（右・のりしろ側）', label:'裏面', parent:'front', hinge:[[W,0],[W,H]], pts:panel(W,W+Wb), ang:180, st:[.45,1], off:-3});
+  const seal=Math.max(4,Math.min(o.seal||12, H/4));
+  guides.push([-Wb,0,W+Wb,seal],[-Wb,H-seal,W+Wb,H],[W+Wb-g,seal,W+Wb,H-seal]);
+  if (o.tear){
+    const y=Math.max(seal+2, Math.min(o.tearPos||22, H/2)), b=Math.max(0,o.band||0), ys=b>0?[y-b/2,y+b/2]:[y];
+    for (const yy of ys){ perfs.push({panel:'front',a:[0,yy],b:[W,yy]},{panel:'backA',a:[-Wb,yy],b:[0,yy]},{panel:'backB',a:[W,yy],b:[W+Wb,yy]}); }
+    const sl=Math.min(4,g*0.4); slits.push({t:'L',a:[W-sl,y],b:[W+sl,y]});
+  }
+  return {panels:L, warns, perfs, slits, guides};
+}
+function buildFlatBag(d,o){
+  if (o.style==='pillow') return buildChipBag(d,o);
+  const W=d.W, H=d.H, fw=glueW(W*0.4,H*0.4), L=[], add=mkAdd(L), perfs=[], slits=[], warns=[];
+  const zigTop = o.edge==='zig' && o.top!=='flap', a=Math.max(1.5,Math.min(4,H*0.025));
+  add({id:'front', name:'表面', label:'表面', pts: zigTop ? [...zigEdge(0,W,0,-1,a),[W,H,0],[0,H,0]] : rectN(0,0,W,H)});
+  add({id:'back', name:'裏面', label:'裏面', parent:'front', hinge:[[0,H],[W,H]], pts: zigTop ? [[0,H,0],[W,H,0],...zigEdge(W,0,2*H,1,a)] : rectN(0,H,W,2*H), ang:180, st:[.4,1], off:-2});
+  const gp=glueFlap(0,H,fw,-1), flap=gp.map(q=>[q[0],q[1],0]);
+  add({id:'glueR', name:'のりしろ（右）', label:'のりしろ', parent:'front', hinge:[gp[0],gp[3]], pts:flap, ang:180, st:[0,.4], off:1});
+  add({id:'glueL', name:'のりしろ（左）', label:'のりしろ', parent:'front', hinge:[[W,gp[0][1]],[W,gp[3][1]]], pts:mirX(W,flap), ang:180, st:[0,.4], off:1});
+  if (o.top==='flap'){
+    const th=Math.max(10,Math.min(o.topH||25, H/3));
+    add({id:'top', name:'封のふた', label:'ふた', parent:'back', hinge:[[1,2*H],[W-1,2*H]], pts:[[1,2*H,0],[W-1,2*H,0],[W-4,2*H+th,4],[4,2*H+th,4]], ang:-180, ph:'c', st:[0,1], off:-1});
+  }
+  if (o.tear){
+    const y=Math.max(6, Math.min(o.tearPos||22, H/2)), b=Math.max(0, o.band||0), ys=b>0?[y-b/2,y+b/2]:[y];
+    if (o.top==='flap' && y < 4) warns.push('開封帯がふたにかかっています。位置を下げてください。');
+    for (const yy of ys){
+      perfs.push({panel:'front', a:[0,yy], b:[W,yy]});
+      if (yy>gp[1][1] && yy<gp[2][1]){ perfs.push({panel:'glueR', a:[-fw,yy], b:[0,yy]}); perfs.push({panel:'glueL', a:[W,yy], b:[W+fw,yy]}); }
+      perfs.push({panel:'back', a:[0,2*H-yy], b:[W,2*H-yy]});
+    }
+    const sl=Math.min(4,fw*0.4); slits.push({t:'L', a:[W-sl,y], b:[W+sl,y], panel:'front'}, {t:'L', a:[W-sl,2*H-y], b:[W,2*H-y], panel:'back'});
+  }
+  return {panels:L, warns, perfs, slits, guides:[]};
+}
+function buildBody(b,d){
+  switch(b.type){
+    case 'mailer': return buildBox(d,b.opts,true);
+    case 'tray': case 'lidover': return buildBox(d,b.opts,false);
+    case 'tuckend': return buildTuck(d,b.opts);
+    case 'sleeve': return buildSleeve(d,b.opts);
+    case 'platform': return buildPlatform(d,b.opts);
+    case 'divider': return buildDivider(d,b.opts);
+    case 'prism': return buildPrism(d,b.opts);
+    case 'petalbox': return buildPetalBox(d,b.opts);
+    case 'flatbag': return buildFlatBag(d,b.opts);
+  }
+}
+function resolveDims(b, models){
+  let W=b.W, D=b.D, H=b.H; const t=b.t;
+  const hm = b.host && models[b.host];
+  if (hm && b.auto){
+    const h=hm.d, ht=h.t, hb=hm.b;
+    const outerH = h.H + (hb.type==='mailer'?2*ht:ht);
+    const innerW = h.W - (hb.opts.double?2*ht:0) - 2;
+    if (b.type==='sleeve'){ W=h.W+2*ht+1; H=outerH+1; D=h.D+2*ht; }
+    if (b.type==='lidover'){ W=h.W+2*ht+1.5; D=h.D+2*ht+1.5; }
+    if (b.type==='platform'){ W=innerW; D=h.D-2; H=Math.min(H, h.H-4); }
+    if (b.type==='divider'){ W = b.opts.dir==='D' ? h.D-2 : innerW; H=Math.min(H, h.H-2); }
+  }
+  return {W:f3(W), D:f3(D), H:f3(H), t};
+}
+
+/* ================= model assembly ================= */
+const map3 = (x,y) => new THREE.Vector3(-x,0,y);
+function hingeSetup(p){
+  const A=map3(...p.hinge[0]), B=map3(...p.hinge[1]);
+  const axis=B.clone().sub(A).normalize(); const c=centroid(p.pts); const d=map3(c[0],c[1]).sub(A);
+  if (axis.z*d.x - axis.x*d.z < 0) axis.negate();
+  p.pivot=A; p.axis=axis;
+}
+function localMat(p,k){
+  const m=new THREE.Matrix4(); if (!p.hinge) return m;
+  const T=new THREE.Matrix4().makeTranslation(p.pivot.x,p.pivot.y,p.pivot.z);
+  const R=new THREE.Matrix4().makeRotationAxis(p.axis, p.ang*k*Math.PI/180);
+  const Ti=new THREE.Matrix4().makeTranslation(-p.pivot.x,-p.pivot.y,-p.pivot.z);
+  return m.multiplyMatrices(T,R).multiply(Ti);
+}
+function orientMat(mdl, k=1){
+  const m=new THREE.Matrix4();
+  if (mdl.rotY) m.multiply(new THREE.Matrix4().makeRotationY(mdl.rotY*k));
+  if (mdl.flip) m.multiply(new THREE.Matrix4().makeRotationZ(Math.PI*k));
+  return m;
+}
+function frameOf(mdl, p){
+  const bb=bboxOf(p.pts), c=[(bb[0]+bb[2])/2,(bb[1]+bb[3])/2];
+  if (!HAS3D) return {c, up:[0,-1], rt:[1,0], bb};
+  const Rt=orientMat(mdl).multiply(mdl.A[p.id]);
+  const nOut=new THREE.Vector3(0,-1,0).transformDirection(Rt);
+  const upW = Math.abs(nOut.y)>0.7 ? new THREE.Vector3(0,0,-1) : new THREE.Vector3(0,1,0);
+  const rtW = upW.clone().cross(nOut);
+  const inv = Rt.clone().invert();
+  const toNet = w => { const l=w.clone().transformDirection(inv); const v=[-l.x,l.z]; const n=Math.hypot(v[0],v[1])||1; return [v[0]/n,v[1]/n]; };
+  const up=toNet(upW), rt=toNet(rtW);
+  const ew=Math.abs(rt[0])*(bb[2]-bb[0])+Math.abs(rt[1])*(bb[3]-bb[1]);
+  const eh=Math.abs(up[0])*(bb[2]-bb[0])+Math.abs(up[1])*(bb[3]-bb[1]);
+  return {c, up, rt, bb, ew, eh};
+}
+const toNet = (fr,u,v) => [fr.c[0]+u*fr.rt[0]+v*fr.up[0], fr.c[1]+u*fr.rt[1]+v*fr.up[1]];
+const toUV = (fr,q) => { const dx=q[0]-fr.c[0], dy=q[1]-fr.c[1]; return [dx*fr.rt[0]+dy*fr.rt[1], dx*fr.up[0]+dy*fr.up[1]]; };
+
+let MD = {}, ORDER = [], SHEET = null;
+function buildAll(){
+  const models={}, done=new Set(), order=[];
+  const visit = b => { if (done.has(b.id)) return; done.add(b.id); const h=S.bodies.find(x=>x.id===b.host); if (h) visit(h); else b.host=null; order.push(b); };
+  S.bodies.forEach(visit);
+  for (const b of order){
+    const d=resolveDims(b, models);
+    const r=buildBody(b,d);
+    const mdl={b, d, info:r.info, panels:r.panels, byId:Object.fromEntries(r.panels.map(p=>[p.id,p])), notes:r.warns.map(t=>({k:'warn',t})), flip:!!TYPE[b.type].flip, rotY:(b.type==='divider'&&b.opts.dir==='D')?Math.PI/2:0, perfs:(r.perfs||[]).slice(), slits:r.slits||[], guides:r.guides||[], texts:[], partGeo:{}};
+    models[b.id]=mdl;
+    if (HAS3D){
+      mdl.A={};
+      for (const p of mdl.panels){ if (p.hinge) hingeSetup(p); mdl.A[p.id] = p.parent ? mdl.A[p.parent].clone().multiply(localMat(p,1)) : new THREE.Matrix4(); }
+      const pts=[]; for (const p of mdl.panels) for (const q of p.pts) pts.push(map3(q[0],q[1]).applyMatrix4(mdl.A[p.id]));
+      const bx=new THREE.Box3().setFromPoints(pts); mdl.box=bx;
+      const c=bx.getCenter(new THREE.Vector3());
+      mdl.anchorAsm=new THREE.Vector3(c.x, mdl.flip?bx.max.y:bx.min.y, c.z);
+    }
+    for (const p of mdl.panels) p.fr = frameOf(mdl, p);
+    applyParts(mdl);
+    for (const p of mdl.panels){ p.o=outline(p.pts); p.ho=p.holes.map(h=>outline(h.nodes)); }
+    const hinges=mdl.panels.filter(p=>p.hinge).map(p=>({t:'L',a:p.hinge[0],b:p.hinge[1],soft:p.soft}));
+    const folds=unionLines(hinges.filter(h=>!h.soft),[]);
+    const straight=[], arcs=[];
+    for (const p of mdl.panels) for (const s of p.o.segs) (s.t==='L'?straight:arcs).push(s);
+    mdl.cuts=unionLines(straight.concat(mdl.slits), hinges).concat(arcs); mdl.folds=folds;
+    mdl.softParents=new Set(mdl.panels.filter(p=>p.soft).map(p=>p.parent));
+    const all=[]; for (const p of mdl.panels) all.push(...p.o.poly);
+    mdl.bb=bboxOf(all);
+    if (b.host && b.auto) {
+      const big = b.type==='platform' && d.H < b.H ? '台座の高さを外箱に合わせて低くしました。' : null;
+      if (big) mdl.notes.push({k:'ok', t:big});
+    }
+  }
+  MD=models; ORDER=order;
+  layoutSheet(); placeBodies();
+}
+function applyParts(mdl){
+  const b=mdl.b; let mirrored=0;
+  for (const pt of b.parts){
+    const p=mdl.byId[pt.panel];
+    if (!p){ mdl.notes.push({k:'warn', t:`${PART[pt.type]}を置いていた面がなくなりました。面を選び直してください。`}); continue; }
+    const fr=p.fr, lab=`${p.name}の${PART[pt.type]}`;
+    if (pt.type==='perf'){
+      const g=perfGeom(p,pt);
+      for (const sg of g.segs) mdl.perfs.push({panel:p.id, ...sg});
+      if (!g.segs.length) mdl.notes.push({k:'warn', t:`${lab}が面の外に出ています。位置を戻してください。`});
+      mdl.partGeo[pt.id]={panel:p.id, nodes:g.poly.map(q=>[q[0],q[1],0]), poly:g.poly};
+      continue;
+    }
+    if (pt.type==='text'){
+      const w=Math.max(4,textWidth(pt)), h=pt.size*1.25;
+      const nodes=[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([u,v])=>{ const q=toNet(fr,pt.u+u,pt.v+v); return [q[0],q[1],0]; });
+      mdl.texts.push({panel:p.id, pt, w, h, c:toNet(fr,pt.u,pt.v), rt:fr.rt, up:fr.up});
+      mdl.partGeo[pt.id]={panel:p.id, nodes, poly:nodes.map(q=>[q[0],q[1]])};
+      if (!inside(bboxOf(nodes), fr.bb, 1)) mdl.notes.push({k:'warn', t:`${lab}が面からはみ出しています。`});
+      continue;
+    }
+    const nodes=partLocal(pt).map(([u,v,r])=>{ const q=toNet(fr,pt.u+u,pt.v+v); return [q[0],q[1],r]; });
+    const bb=bboxOf(nodes);
+    if (!inside(bb, fr.bb, 3)) mdl.notes.push({k:'warn', t:`${lab}が折り線や端にかかっています。端から3mm以上内側に収めてください。`});
+    p.holes.push({nodes, part:pt.id});
+    mdl.partGeo[pt.id]={panel:p.id, nodes, poly:outline(nodes).poly};
+    if (!HAS3D) continue;
+    const Ap=mdl.A[p.id], world=nodes.map(q=>map3(q[0],q[1]).applyMatrix4(Ap));
+    for (const q of mdl.panels){
+      if (q===p) continue;
+      if (b.type==='flatbag' && p.id!==q.id && /^(front|back)/.test(p.id) && /^(front|back)/.test(q.id) && !(p.id==='backA'&&q.id==='backB') && !(p.id==='backB'&&q.id==='backA')) continue;
+      const inv=mdl.A[q.id].clone().invert(); let co=true; const net=[];
+      for (let i=0;i<world.length;i++){ const l=world[i].clone().applyMatrix4(inv); if (Math.abs(l.y)>0.05){co=false;break;} net.push([-l.x,l.z,nodes[i][2]]); }
+      if (!co) continue;
+      const mb=bboxOf(net), qb=bboxOf(q.pts);
+      if (inside(mb,qb,1.5)){ q.holes.push({nodes:net, mirrorOf:pt.id}); mirrored++; }
+      else if (overlaps(mb,qb)) mdl.notes.push({k:'warn', t:`${lab}の裏に「${q.name}」が一部重なり、内側でふさがります。位置か大きさを調整してください。`});
+    }
+  }
+  if (mirrored) mdl.notes.push({k:'ok', t:`内側に重なる板（${mirrored}か所）にも、同じ位置の穴を自動で抜きました。`});
+}
+function layoutSheet(){
+  let x=0, maxH=0; const gap=30, cap=14;
+  for (const b of S.bodies){ const m=MD[b.id]; if(!m) continue; const w=m.bb[2]-m.bb[0], h=m.bb[3]-m.bb[1]; m.ox=x-m.bb[0]; m.oy=cap-m.bb[1]; x+=w+gap; maxH=Math.max(maxH,h+cap); }
+  SHEET={w:Math.max(1,x-gap), h:maxH};
+}
+function placeBodies(){
+  if (!HAS3D) return;
+  const roots=S.bodies.filter(b=>!b.host && MD[b.id]);
+  const widths=roots.map(b=>{ let w=MD[b.id].box.max.x-MD[b.id].box.min.x; for (const c of S.bodies) if (c.host===b.id && MD[c.id]) w=Math.max(w, MD[c.id].box.max.x-MD[c.id].box.min.x); return w; });
+  const gap=90, total=widths.reduce((a,b)=>a+b,0)+gap*Math.max(0,roots.length-1);
+  let cur=total/2;
+  roots.forEach((b,i)=>{ const m=MD[b.id]; m.asmPos=new THREE.Vector3(cur-widths[i]/2,0,0); m.explPos=m.asmPos.clone(); cur-=widths[i]+gap; });
+  for (const b of ORDER){
+    const m=MD[b.id]; if (!b.host) continue; const hm=MD[b.host], hp=hm.asmPos, floor=hm.d.t+0.15;
+    if (b.type==='platform'){ m.asmPos=hp.clone().add(new THREE.Vector3(0,floor,0)); m.explPos=m.asmPos.clone().add(new THREE.Vector3(0,hm.d.H+40+m.d.H,0)); }
+    else if (b.type==='divider'){ const o=b.opts.pos||0; m.asmPos=hp.clone().add(b.opts.dir==='D'?new THREE.Vector3(-o,floor,0):new THREE.Vector3(0,floor,-o)); m.explPos=m.asmPos.clone().add(new THREE.Vector3(0,hm.d.H+45,0)); }
+    else if (b.type==='lidover'){ m.asmPos=hp.clone().add(new THREE.Vector3(0,Math.max(0,hm.d.H+hm.d.t-m.d.H+0.3),0)); m.explPos=m.asmPos.clone().add(new THREE.Vector3(0,m.d.H+50,0)); }
+    else if (b.type==='sleeve'){ m.asmPos=hp.clone().add(new THREE.Vector3(0,-(m.d.t+0.3),0)); m.explPos=m.asmPos.clone().add(new THREE.Vector3(0,0,m.d.D*1.1+20)); }
+    else { m.asmPos=hp.clone(); m.explPos=hp.clone(); }
+  }
+  for (const b of S.bodies){
+    const m=MD[b.id]; if(!m) continue;
+    const cx=(m.bb[0]+m.bb[2])/2, cy=(m.bb[1]+m.bb[3])/2;
+    m.anchorFlat=map3(cx,cy);
+    m.flatPos=map3(m.ox+cx-SHEET.w/2, m.oy+cy-SHEET.h/2);
+    m.lift=Math.max(m.bb[2]-m.bb[0], m.bb[3]-m.bb[1])/2+20;
+  }
+}
+function phases(p){ return {fb:clamp01(p/0.6), a:clamp01((p-0.6)/0.2), fc:clamp01((p-0.8)/0.2)}; }
+
+/* ================= 2D sheet ================= */
+const dimsText=(b,m)=> b.type==='flatbag' ? `${f3(m.d.W)}×${f3(m.d.H)}` : b.type==='prism' ? `⌀${f3(m.d.W)}×長さ${f3(m.d.D)}・${clampInt(b.opts.n,3,48)}面` : b.type==='petalbox' ? `⌀${f3(m.d.W)}×高さ${f3(m.d.H)}・${clampInt(b.opts.n,3,8)}枚` : `${f3(m.d.W)}×${f3(m.d.D)}×${f3(m.d.H)}`;
+function textOn(hex){ const c=parseInt(hex.slice(1),16); const r=(c>>16)&255,g=(c>>8)&255,b=c&255; return (0.299*r+0.587*g+0.114*b)>140 ? 'rgba(30,40,60,.42)' : 'rgba(255,255,255,.6)'; }
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function bodyPaths(m, ox, oy){
+  const cut = segsToD(m.cuts.filter(s=>s.t==='L'),ox,oy,false) + m.cuts.filter(s=>s.t==='A').map(s=>segsToD([s],ox,oy,false)).join('')
+            + m.panels.flatMap(p=>p.ho.map(h=>segsToD(h.segs,ox,oy,true))).join('');
+  const fold = segsToD(m.folds,ox,oy,false);
+  const perf = m.perfs.map(s=>`M${f3(s.a[0]+ox)} ${f3(s.a[1]+oy)}L${f3(s.b[0]+ox)} ${f3(s.b[1]+oy)}`).join('');
+  return {cut, fold, perf};
+}
+function textSvg(t, ox, oy, fill){
+  const ang=Math.atan2(t.rt[1],t.rt[0])*180/Math.PI, x=f3(t.c[0]+ox), y=f3(t.c[1]+oy);
+  return `<text x="${x}" y="${y}" font-size="${f3(t.pt.size)}" font-weight="700" font-family="Zen Kaku Gothic New, sans-serif" text-anchor="middle" dominant-baseline="central" fill="${fill||t.pt.color}" transform="rotate(${f3(ang)} ${x} ${y})">${esc(t.pt.text)}</text>`;
+}
+let sheetView=null;
+function drawSheet(){
+  const pad=14, vb=sheetView?sheetView.slice():[-pad, -pad, SHEET.w+pad*2, SHEET.h+pad*2];
+  const dash = S.crease==='dash' ? ' stroke-dasharray="6 3"' : '';
+  const sel=S.sel||{};
+  let out='';
+  for (const b of S.bodies){
+    const m=MD[b.id]; if(!m) continue; const ox=m.ox, oy=m.oy;
+    const fills=m.panels.map(p=>`<path vector-effect="non-scaling-stroke" data-body="${b.id}" data-panel="${p.id}" d="${segsToD(p.o.segs,ox,oy,true)}${p.ho.map(h=>segsToD(h.segs,ox,oy,true)).join('')}" fill-rule="evenodd"/>`).join('');
+    const {cut,fold,perf}=bodyPaths(m,ox,oy);
+    const fs=Math.max(2.2, Math.min(10, Math.min(m.d.H||m.d.W, m.d.W)/5));
+    const labs=m.panels.filter(p=>p.label && !m.texts.some(t=>t.panel===p.id)).map(p=>{ const bb=bboxOf(p.o.poly); return `<text x="${f3((bb[0]+bb[2])/2+ox)}" y="${f3((bb[1]+bb[3])/2+oy)}">${p.label}</text>`; }).join('');
+    const selP = sel.body===b.id && sel.kind==='panel' ? m.byId[sel.panel] : null;
+    const hl = selP ? `<path d="${segsToD(selP.o.segs,ox,oy,true)}" fill="rgba(39,65,166,.12)" stroke="#ffd34d" stroke-width="2.4" vector-effect="non-scaling-stroke" pointer-events="none"/>` : '';
+    const parts = b.parts.filter(pt=>m.partGeo[pt.id]).map(pt=>{ const g=m.partGeo[pt.id]; const on=sel.kind==='part'&&sel.part===pt.id;
+      return `<path data-body="${b.id}" data-part="${pt.id}" d="M${g.poly.map(q=>`${f3(q[0]+ox)} ${f3(q[1]+oy)}`).join('L')}Z" fill="${on?'rgba(255,211,77,.25)':'rgba(0,0,0,0)'}" stroke="${on?'#ffd34d':'none'}" stroke-width="2.2" vector-effect="non-scaling-stroke"/>`; }).join('');
+    const bsel = sel.body===b.id;
+    out += `<g>
+      <text x="${f3(ox+m.bb[0])}" y="${f3(oy+m.bb[1]-5)}" font-size="${f3(Math.max(2.5,Math.min(9,SHEET.w/70,(m.bb[2]-m.bb[0])/((b.name.length+dimsText(b,m).length)*0.75))))}" fill="${bsel?'#ffd34d':'var(--mat-ink)'}" font-family="Zen Kaku Gothic New, sans-serif" font-weight="700">${esc(b.name)}　${dimsText(b,m)}</text>
+      <g fill="${b.outC}" stroke="${b.outC}" stroke-width="1" stroke-linejoin="round" style="filter:drop-shadow(0 1.2px 1.6px rgba(0,0,0,.35))">${fills}</g>
+      <g font-family="Zen Kaku Gothic New, sans-serif" font-size="${f3(fs)}" text-anchor="middle" dominant-baseline="central" fill="${textOn(b.outC)}" pointer-events="none">${labs}</g>
+      <g pointer-events="none">${m.texts.map(t=>textSvg(t,ox,oy)).join('')}</g>
+      ${m.guides.length?`<g fill="url(#hatch)" stroke="rgba(214,53,43,.55)" stroke-width="0.8" stroke-dasharray="3 2" pointer-events="none">${m.guides.map(r=>`<rect x="${f3(r[0]+ox)}" y="${f3(r[1]+oy)}" width="${f3(r[2]-r[0])}" height="${f3(r[3]-r[1])}" vector-effect="non-scaling-stroke"/>`).join('')}</g>`:''}
+      ${hl}
+      <g fill="none" stroke="#2741a6" stroke-width="1.3" stroke-linejoin="round" pointer-events="none"><path d="${cut}" vector-effect="non-scaling-stroke"/></g>
+      <g fill="none" stroke="#e0362b" stroke-width="1.1"${dash} pointer-events="none"><path d="${fold}" vector-effect="non-scaling-stroke"/></g>
+      <g fill="none" stroke="#2741a6" stroke-width="1.2" stroke-dasharray="4 2.5" pointer-events="none"><path d="${perf}" vector-effect="non-scaling-stroke"/></g>
+      ${parts}
+    </g>`;
+  }
+  const sv=$('#sheet');
+  sv.setAttribute('viewBox', vb.map(f3).join(' '));
+  sv.innerHTML = `<defs>
+      <pattern id="hatch" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V3" stroke="rgba(214,53,43,.35)" stroke-width=".6"/></pattern>
+      <pattern id="g10" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="var(--mat-line)" stroke-width=".3"/></pattern>
+      <pattern id="g50" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="url(#g10)"/><path d="M50 0H0V50" fill="none" stroke="var(--mat-major)" stroke-width=".5"/></pattern>
+    </defs><rect x="${vb[0]-3000}" y="${vb[1]-3000}" width="${vb[2]+6000}" height="${vb[3]+6000}" fill="url(#g50)" data-bg="1"/>${out}`;
+}
+function exportSvg(ids){
+  const list=S.bodies.filter(b=>ids.includes(b.id) && MD[b.id]);
+  const m0=5, gap=20; let x=m0, h=0; const parts=[];
+  const dash = S.crease==='dash' ? ' stroke-dasharray="3 1.5"' : '';
+  let cut='', fold='', perf='', print='';
+  for (const b of list){
+    const m=MD[b.id], ox=x-m.bb[0], oy=m0-m.bb[1];
+    const p=bodyPaths(m,ox,oy); cut+=p.cut; fold+=p.fold; perf+=p.perf;
+    print+=m.texts.map(t=>textSvg(t,ox,oy)).join('');
+    parts.push(`${b.name} ${dimsText(b,m)}mm t${m.d.t}`);
+    x+=(m.bb[2]-m.bb[0])+gap; h=Math.max(h,m.bb[3]-m.bb[1]);
+  }
+  const W=x-gap+m0, H=h+2*m0;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${f3(W)}mm" height="${f3(H)}mm" viewBox="0 0 ${f3(W)} ${f3(H)}">
+  <title>${esc(parts.join(' / '))}</title>
+  <g id="print">${print}</g>
+  <g id="cut" fill="none" stroke="#2741a6" stroke-width="0.25" stroke-linejoin="round"><path d="${cut}"/></g>
+  <g id="crease" fill="none" stroke="#e0362b" stroke-width="0.25"${dash}><path d="${fold}"/></g>
+  <g id="perforation" fill="none" stroke="#2741a6" stroke-width="0.25" stroke-dasharray="2 1"><path d="${perf}"/></g>
+</svg>`;
+}
+
+/* ================= 3D ================= */
+let renderer, scene, camera, controls, root, matMap={}, groups={}, bodyGroups={}, pickables=[];
+const texCache=new Map();
+function initGL(){
+  if (!HAS3D){ $('#toolhint').hidden=false; $('#toolhint').textContent='3D表示を読み込めませんでした。展開図は使えます。'; return; }
+  const cv=$('#gl');
+  renderer=new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio||1));
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(35,1,2,10000);
+  controls=new THREE.OrbitControls(camera,cv);
+  controls.enableDamping=true; controls.dampingFactor=.09; controls.maxPolarAngle=Math.PI*0.48; controls.maxDistance=4000;
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f99,0.85));
+  const dl=new THREE.DirectionalLight(0xffffff,0.75); dl.position.set(300,500,420); scene.add(dl);
+  const dl2=new THREE.DirectionalLight(0xffffff,0.25); dl2.position.set(-300,200,-300); scene.add(dl2);
+  const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d');
+  x.fillStyle='#2e5a48'; x.fillRect(0,0,512,512);
+  for (let i=0;i<=10;i++){ x.strokeStyle=i%5===0?'rgba(255,255,255,.22)':'rgba(255,255,255,.09)'; x.lineWidth=i%5===0?2:1; const p=i*51.2; x.beginPath(); x.moveTo(p,0); x.lineTo(p,512); x.moveTo(0,p); x.lineTo(512,p); x.stroke(); }
+  const tex=new THREE.CanvasTexture(c); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(200,200); tex.encoding=THREE.sRGBEncoding; tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  const mat=new THREE.Mesh(new THREE.PlaneGeometry(20000,20000), new THREE.MeshStandardMaterial({map:tex, roughness:1}));
+  mat.rotation.x=-Math.PI/2; mat.position.y=-1.2; scene.add(mat);
+  new ResizeObserver(resize).observe(cv.parentElement); resize();
+  (function loop(){ requestAnimationFrame(loop); controls.update(); renderer.render(scene,camera); })();
+  bindPointer3D();
+}
+function resize(){ if(!renderer) return; const el=$('#gl').parentElement, w=el.clientWidth, h=el.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+function textTexture(pt){
+  const key=pt.text+'|'+pt.color+'|'+pt.size; if (texCache.has(key)) return texCache.get(key);
+  const w=Math.max(4,textWidth(pt)), h=pt.size*1.25, s=12;
+  const c=document.createElement('canvas'); c.width=Math.min(2048,Math.ceil(w*s)); c.height=Math.min(1024,Math.ceil(h*s));
+  const x=c.getContext('2d'); x.fillStyle=pt.color; x.textAlign='center'; x.textBaseline='middle';
+  x.font=`700 ${pt.size*s}px "Zen Kaku Gothic New", sans-serif`; x.fillText(pt.text, c.width/2, c.height/2+pt.size*s*0.04);
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; t.anisotropy=8; texCache.set(key,t); return t;
+}
+function build3D(){
+  if (!renderer) return;
+  if (root){ scene.remove(root); root.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
+  Object.values(matMap).forEach(m=>Object.values(m).forEach(x=>x.dispose&&x.dispose()));
+  ghost3d=null;
+  root=new THREE.Group(); groups={}; bodyGroups={}; pickables=[]; matMap={};
+  const sel=S.sel||{};
+  const accent=new THREE.Color('#ffc928');
+  for (const b of S.bodies){
+    const m=MD[b.id]; if(!m) continue;
+    const eps=Math.max(m.d.t,0.35);
+    const mats={in:new THREE.MeshStandardMaterial({color:b.inC, roughness:.9, side:THREE.FrontSide}),
+                out:new THREE.MeshStandardMaterial({color:b.outC, roughness:.85, side:THREE.BackSide}),
+                inS:new THREE.MeshStandardMaterial({color:b.inC, roughness:.9, side:THREE.FrontSide, emissive:'#2741a6', emissiveIntensity:.35}),
+                outS:new THREE.MeshStandardMaterial({color:b.outC, roughness:.85, side:THREE.BackSide, emissive:'#2741a6', emissiveIntensity:.35}),
+                line:new THREE.LineBasicMaterial({color:0x2a2f38, transparent:true, opacity:.32}),
+                perf:new THREE.LineDashedMaterial({color:0x2741a6, dashSize:2.2, gapSize:1.4}),
+                hl:new THREE.LineBasicMaterial({color:accent, depthTest:false, transparent:true}),
+                pick:new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false, side:THREE.DoubleSide})};
+    matMap[b.id]=mats;
+    const bg=new THREE.Group(); bg.matrixAutoUpdate=false; bodyGroups[b.id]=bg; root.add(bg);
+    const gmap={}; groups[b.id]=gmap;
+    for (const p of m.panels){
+      const g=new THREE.Group(); g.matrixAutoUpdate=false; gmap[p.id]=g;
+      const shape=new THREE.Shape(p.o.poly.map(q=>new THREE.Vector2(-q[0],-q[1])));
+      for (const h of p.ho) shape.holes.push(new THREE.Path(h.poly.map(q=>new THREE.Vector2(-q[0],-q[1]))));
+      const geo=new THREE.ShapeGeometry(shape); geo.rotateX(-Math.PI/2);
+      const isSel = sel.kind==='panel' && sel.body===b.id && sel.panel===p.id;
+      const mi=new THREE.Mesh(geo, isSel?mats.inS:mats.in), mo=new THREE.Mesh(geo, isSel?mats.outS:mats.out);
+      mi.position.y=mo.position.y=p.off*eps;
+      mi.userData=mo.userData={body:b.id, panel:p.id};
+      g.add(mi,mo); pickables.push(mi,mo);
+      const loops = (p.soft || m.softParents.has(p.id)) ? p.ho.map(h=>h.poly) : [p.o.poly, ...p.ho.map(h=>h.poly)];
+      for (const loop of loops){
+        const l=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(loop.map(q=>map3(q[0],q[1]))), mats.line); l.position.y=p.off*eps; g.add(l);
+      }
+      for (const s of m.perfs.filter(s=>s.panel===p.id)) for (const sgn of [-1,1]){
+        const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([map3(...s.a),map3(...s.b)]), mats.perf); l.computeLineDistances(); l.position.y=p.off*eps+sgn*0.2; g.add(l);
+      }
+      for (const t of m.texts.filter(t=>t.panel===p.id)){
+        const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,c])=>map3(t.c[0]+a*t.w/2*t.rt[0]+c*t.h/2*t.up[0], t.c[1]+a*t.w/2*t.rt[1]+c*t.h/2*t.up[1]));
+        const geo2=new THREE.BufferGeometry();
+        geo2.setAttribute('position', new THREE.Float32BufferAttribute(corners.flatMap(v=>[v.x,v.y,v.z]),3));
+        geo2.setAttribute('uv', new THREE.Float32BufferAttribute([0,0,1,0,1,1,0,1],2));
+        geo2.setIndex([0,1,2,0,2,3]);
+        const tm=new THREE.Mesh(geo2, new THREE.MeshBasicMaterial({map:textTexture(t.pt), transparent:true, depthWrite:false, side:THREE.DoubleSide}));
+        tm.position.y=p.off*eps-0.35; tm.renderOrder=2; g.add(tm);
+      }
+      if (isSel){ const l=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(p.o.poly.map(q=>map3(q[0],q[1]))), mats.hl); l.position.y=p.off*eps; l.renderOrder=5; g.add(l); }
+    }
+    for (const pt of b.parts){
+      const pg=m.partGeo[pt.id]; if(!pg) continue; const p=m.byId[pg.panel], g=gmap[pg.panel];
+      const shape=new THREE.Shape(pg.poly.map(q=>new THREE.Vector2(-q[0],-q[1])));
+      const geo=new THREE.ShapeGeometry(shape); geo.rotateX(-Math.PI/2);
+      const pk=new THREE.Mesh(geo, mats.pick); pk.position.y=p.off*eps-0.6; pk.userData={body:b.id, part:pt.id, panel:p.id}; g.add(pk); pickables.push(pk);
+      if (sel.kind==='part' && sel.part===pt.id){ const l=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pg.poly.map(q=>map3(q[0],q[1]))), mats.hl); l.position.y=p.off*eps-0.6; l.renderOrder=6; g.add(l); }
+    }
+    for (const p of m.panels) (p.parent ? gmap[p.parent] : bg).add(gmap[p.id]);
+  }
+  scene.add(root); applyFold(S.fold);
+}
+function applyFold(p){
+  $('#pct').textContent=Math.round(p*100)+'%';
+  $('#stepName').innerHTML = `<b>${p<=0.001?'展開した状態':p<0.6?'パーツを折る':p<0.8?'箱を組み合わせる':p<0.999?'ふたを閉じる':'完成'}</b>`;
+  if (!renderer) return;
+  const {fb,a,fc}=phases(p), eb=ease(fb), ea=ease(a);
+  for (const b of S.bodies){
+    const m=MD[b.id], gmap=groups[b.id]; if(!m||!gmap) continue;
+    for (const pn of m.panels){
+      const g=gmap[pn.id]; if(!g) continue;
+      const k=ease(((pn.ph==='c'?fc:fb)-pn.st[0])/(pn.st[1]-pn.st[0]));
+      g.matrix.copy(localMat(pn,k)); g.matrixWorldNeedsUpdate=true;
+    }
+    const pos=m.flatPos.clone().lerp(m.explPos,eb).lerp(m.asmPos,ea);
+    if (m.flip) pos.y+=Math.sin(Math.PI*eb)*m.lift;
+    const anc=m.anchorFlat.clone().lerp(m.anchorAsm,eb);
+    const M=new THREE.Matrix4().makeTranslation(pos.x,pos.y,pos.z).multiply(orientMat(m,eb)).multiply(new THREE.Matrix4().makeTranslation(-anc.x,-anc.y,-anc.z));
+    const bg=bodyGroups[b.id]; bg.matrix.copy(M); bg.matrixWorldNeedsUpdate=true;
+  }
+}
+function frameCamera(){
+  if (!renderer) return;
+  const box=new THREE.Box3();
+  for (const b of S.bodies){ const m=MD[b.id]; if(!m) continue; const sz=m.box.getSize(new THREE.Vector3()); const h=Math.max(sz.x,sz.z)/2; box.expandByPoint(m.asmPos.clone().add(new THREE.Vector3(-h,0,-h))); box.expandByPoint(m.asmPos.clone().add(new THREE.Vector3(h,sz.y,h))); box.expandByPoint(m.explPos.clone().add(new THREE.Vector3(0,sz.y,0))); }
+  if (box.isEmpty()) return;
+  const c=box.getCenter(new THREE.Vector3()), s=box.getSize(new THREE.Vector3()); const L=Math.max(s.x,s.z,s.y*1.6, 120);
+  const k=(camera.aspect<1.1?Math.min(2.2,1.25/camera.aspect):1)*1.55;
+  controls.target.copy(c); camera.position.set(c.x+L*0.7*k, c.y+L*0.85*k, c.z+L*1.35*k); controls.update();
+}
+
+/* ---------- 3D pointer: select, place, drag ---------- */
+let raycaster=null, ndc=null, drag=null, downAt=null;
+function pick(ev){
+  const r=$('#gl').getBoundingClientRect();
+  ndc.set(((ev.clientX-r.left)/r.width)*2-1, -((ev.clientY-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(ndc,camera);
+  if (!root) return [];
+  root.updateMatrixWorld(true);
+  return raycaster.intersectObjects(pickables,false);
+}
+function netOnPanel(bodyId, panelId, ev){
+  const g=groups[bodyId]?.[panelId]; if(!g) return null;
+  const r=$('#gl').getBoundingClientRect();
+  ndc.set(((ev.clientX-r.left)/r.width)*2-1, -((ev.clientY-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(ndc,camera);
+  root.updateMatrixWorld(true);
+  const n=new THREE.Vector3(0,1,0).transformDirection(g.matrixWorld), o=new THREE.Vector3().applyMatrix4(g.matrixWorld);
+  if (Math.abs(raycaster.ray.direction.dot(n))<0.08) return null;
+  const hit=new THREE.Vector3(); if(!raycaster.ray.intersectPlane(new THREE.Plane().setFromNormalAndCoplanarPoint(n,o),hit)) return null;
+  const l=hit.applyMatrix4(g.matrixWorld.clone().invert()); return [-l.x, l.z];
+}
+function bindPointer3D(){
+  raycaster=new THREE.Raycaster(); ndc=new THREE.Vector2();
+  const cv=$('#gl');
+  cv.addEventListener('pointerdown',ev=>{
+    if (ev.button!==0) return;
+    downAt=[ev.clientX,ev.clientY];
+    if (TOOL) return;
+    const hits=pick(ev); const h=hits.find(x=>x.object.userData.part);
+    const top=hits[0];
+    if (h && (!top || top.object.userData.part || top.distance > h.distance - 2)){
+      const {body,part,panel}=h.object.userData;
+      remember(true);
+      drag={kind:'3d', body, part, panel, grab:grabOffset(body,part,netOnPanel(body,panel,ev))}; controls.enabled=false; cv.setPointerCapture(ev.pointerId);
+      if (!(S.sel?.kind==='part' && S.sel.part===part)){ S.sel={kind:'part', body, part}; update({all:true}); }
+    }
+  });
+  cv.addEventListener('pointermove',ev=>{
+    if (drag && drag.kind==='3d'){ const q=netOnPanel(drag.body,drag.panel,ev); if(q) movePartTo(drag.body,drag.part,q,drag.grab); return; }
+    if (TOOL) { showGhost3D(ev); return; }
+    if (ev.buttons) return;
+    const hits=pick(ev);
+    cv.style.cursor = TOOL ? (hits.some(x=>x.object.userData.panel&&!x.object.userData.part)?'crosshair':'not-allowed') : (hits[0]?.object.userData.part ? 'grab' : '');
+  });
+  const end=ev=>{
+    if (drag && drag.kind==='3d'){ drag=null; controls.enabled=true; persist(); return; }
+    if (!downAt) return; const moved=Math.hypot(ev.clientX-downAt[0], ev.clientY-downAt[1]); downAt=null; if (moved>5) return;
+    const hits=pick(ev); const h=hits.find(x=>x.object.userData.panel && !x.object.userData.part) ;
+    const hp=hits[0];
+    if (TOOL){ if (h){ const q=netOnPanel(h.object.userData.body,h.object.userData.panel,ev); addPart(h.object.userData.body,h.object.userData.panel,TOOL,q); } return; }
+    if (hp?.object.userData.part){ const u=hp.object.userData; S.sel={kind:'part',body:u.body,part:u.part}; }
+    else if (h){ const u=h.object.userData; S.sel={kind:'panel',body:u.body,panel:u.panel}; }
+    else return;
+    update({all:true});
+  };
+  cv.addEventListener('pointerup',end);
+  cv.addEventListener('pointercancel',()=>{ drag=null; downAt=null; controls.enabled=true; });
+  cv.addEventListener('pointerleave',()=>{ if (!drag) clearGhost3D(); });
+}
+let moveQueued=null;
+function grabOffset(bodyId, partId, q){
+  const b=S.bodies.find(x=>x.id===bodyId), pt=b?.parts.find(x=>x.id===partId), p=MD[bodyId]?.byId[pt?.panel];
+  if (!pt || !p || !q) return [0,0]; const [u,v]=toUV(p.fr,q); return [pt.u-u, pt.v-v];
+}
+function partExtent(pt){ if (pt.type==='text') return [Math.max(4,textWidth(pt)), pt.size*1.25]; if (pt.type==='perf') return [0,0]; return [pt.w||0, pt.h||0]; }
+function clampUV(fr, pt, u, v){
+  const [w,h]=partExtent(pt), ew=fr.ew||0, eh=fr.eh||0, m=2;
+  const lim=(val,ext,size)=>{ const r=(ext-size)/2-m; return r<=0 ? 0 : Math.max(-r, Math.min(r, val)); };
+  return [lim(u,ew,w), lim(v,eh,h)];
+}
+function movePartTo(bodyId, partId, q, grab=[0,0]){
+  const b=S.bodies.find(x=>x.id===bodyId), pt=b?.parts.find(x=>x.id===partId); if(!pt) return;
+  const p=MD[bodyId]?.byId[pt.panel]; if(!p) return;
+  let [u,v]=toUV(p.fr,q); u+=grab[0]; v+=grab[1];
+  [u,v]=clampUV(p.fr, pt, u, v);
+  const snap=x=>Math.round(x*2)/2;
+  pt.u=snap(u); pt.v=snap(v);
+  if (moveQueued) return;
+  moveQueued=requestAnimationFrame(()=>{ moveQueued=null; update({props:false, tree:false}); syncPartFields(pt); });
+}
+function syncPartFields(pt){ for (const k of ['u','v']){ const el=document.getElementById('pp-'+k); if(el && document.activeElement!==el) el.value=pt[k]; } }
+
+/* ---------- 2D sheet pointer ---------- */
+function bindSheet(){
+  const sv=$('#sheet');
+  const toSvg=ev=>{ const p=sv.createSVGPoint(); p.x=ev.clientX; p.y=ev.clientY; const q=p.matrixTransform(sv.getScreenCTM().inverse()); return [q.x,q.y]; };
+  let d2=null, down=null, pan=null;
+  const cur=()=>sv.getAttribute('viewBox').split(' ').map(Number);
+  sv.addEventListener('wheel',ev=>{ ev.preventDefault(); const v=cur(), [x,y]=toSvg(ev), k=Math.exp(ev.deltaY*0.0015);
+    sheetView=[x-(x-v[0])*k, y-(y-v[1])*k, v[2]*k, v[3]*k]; sv.setAttribute('viewBox', sheetView.map(f3).join(' ')); },{passive:false});
+  sv.addEventListener('dblclick',()=>{ sheetView=null; drawSheet(); });
+  sv.addEventListener('pointerdown',ev=>{
+    if (ev.target.dataset.bg && !TOOL){ const v=cur(); pan={x:ev.clientX,y:ev.clientY,v,s:v[2]/sv.getBoundingClientRect().width}; sv.setPointerCapture(ev.pointerId); }
+  });
+  sv.addEventListener('pointermove',ev=>{ if(!pan) return; const r=sv.getBoundingClientRect(), s=Math.max(pan.v[2]/r.width, pan.v[3]/r.height);
+    sheetView=[pan.v[0]-(ev.clientX-pan.x)*s, pan.v[1]-(ev.clientY-pan.y)*s, pan.v[2], pan.v[3]]; sv.setAttribute('viewBox', sheetView.map(f3).join(' ')); });
+  sv.addEventListener('pointerup',()=>{ pan=null; });
+  sv.addEventListener('pointerdown',ev=>{
+    down=[ev.clientX,ev.clientY];
+    const el=ev.target.closest('[data-part]');
+    if (el && !TOOL){ const body=el.dataset.body, part=el.dataset.part; remember(true); { const m0=MD[body], [x,y]=toSvg(ev); d2={body,part,grab:grabOffset(body,part,[x-m0.ox,y-m0.oy])}; } sv.setPointerCapture(ev.pointerId);
+      if (!(S.sel?.kind==='part'&&S.sel.part===part)){ S.sel={kind:'part',body,part}; update({all:true}); } }
+  });
+  sv.addEventListener('pointermove',ev=>{ if(!d2){ if(TOOL) showGhost2D(ev, toSvg); return; } const m=MD[d2.body]; const [x,y]=toSvg(ev); movePartTo(d2.body,d2.part,[x-m.ox,y-m.oy],d2.grab); });
+  sv.addEventListener('pointerleave',()=>{ const g=document.getElementById('ghost2d'); if(g) g.remove(); });
+  sv.addEventListener('pointerup',ev=>{
+    if (d2){ d2=null; persist(); return; }
+    if (!down || Math.hypot(ev.clientX-down[0],ev.clientY-down[1])>5) { down=null; return; } down=null;
+    const pe=ev.target.closest('[data-part]'), el=ev.target.closest('[data-panel]');
+    if (!el && !pe) return;
+    const body=(el||pe).dataset.body, m=MD[body], panel=el ? el.dataset.panel : m.partGeo[pe.dataset.part]?.panel;
+    if (!panel) return;
+    if (TOOL){ const [x,y]=toSvg(ev); addPart(body,panel,TOOL,[x-m.ox,y-m.oy]); return; }
+    S.sel={kind:'panel',body,panel}; update({all:true});
+  });
+}
+
+/* ================= parts & bodies ================= */
+let TOOL='';
+const TOOL_HINT = {window:'窓を開ける面をクリック', handle:'持ち手穴を開ける面をクリック', hang:'吊り下げ穴を開ける面をクリック', perf:'ミシン目を入れる面をクリック', text:'文字を入れる面をクリック'};
+function setTool(t){
+  TOOL=t||''; if (HAS3D) clearGhost3D(); const g2=document.getElementById('ghost2d'); if (g2) g2.remove(); document.querySelectorAll('[data-tool]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tool===TOOL)));
+  const h=$('#toolhint'); h.hidden=!TOOL; h.textContent=TOOL?TOOL_HINT[TOOL]+'（Escで解除）':'';
+}
+function makePart(p, type, q){
+  const fr=p.fr; const [u,v]=q?toUV(fr,q):[0,0]; const ew=fr.ew||100, eh=fr.eh||60;
+  const r=x=>Math.round(x);
+  let pt={id:'ghost', type, panel:p.id, u:Math.round(u), v:Math.round(v)};
+  if (type==='window') Object.assign(pt,{shape:'rect', w:r(Math.min(ew*0.38,90)), h:r(Math.min(eh*0.5,60)), r:5});
+  if (type==='handle') Object.assign(pt,{w:r(Math.min(ew*0.5,80)), h:r(Math.max(10,Math.min(eh*0.3,22)))});
+  if (type==='hang')   Object.assign(pt,{w:r(Math.min(32,ew*0.6)), h:5, dia:9});
+  if (type==='perf')   Object.assign(pt,{ang:0, band:8});
+  if (type==='text')   Object.assign(pt,{text:'TEXT', size:r(Math.max(4,Math.min(eh*0.25,12))), color:'#22324d'});
+  const [cu,cv]=clampUV(fr, pt, pt.u, pt.v); pt.u=Math.round(cu); pt.v=Math.round(cv);
+  return pt;
+}
+function ghostPoly(p, pt){
+  const fr=p.fr;
+  if (pt.type==='text'){ const [w,h]=partExtent(pt); return [[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([u,v])=>toNet(fr,pt.u+u,pt.v+v)); }
+  if (pt.type==='perf') return perfGeom(p,pt).poly;
+  return outline(partLocal(pt).map(([u,v,r])=>{ const q=toNet(fr,pt.u+u,pt.v+v); return [q[0],q[1],r]; })).poly;
+}
+let ghost3d=null;
+function clearGhost3D(){ if (ghost3d){ ghost3d.parent?.remove(ghost3d); ghost3d.geometry.dispose(); ghost3d=null; } }
+function showGhost3D(ev){
+  clearGhost3D();
+  const h=pick(ev).find(x=>x.object.userData.panel && !x.object.userData.part); if (!h) return;
+  const {body,panel}=h.object.userData, p=MD[body]?.byId[panel], q=netOnPanel(body,panel,ev); if (!p||!q) return;
+  const poly=ghostPoly(p, makePart(p,TOOL,q)), eps=Math.max(MD[body].d.t,0.35);
+  ghost3d=new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(poly.map(c=>map3(c[0],c[1]))), new THREE.LineBasicMaterial({color:0xffc928, depthTest:false, transparent:true}));
+  ghost3d.position.y=p.off*eps-0.7; ghost3d.renderOrder=9; groups[body][panel].add(ghost3d);
+}
+function showGhost2D(ev, toSvg){
+  const old=document.getElementById('ghost2d'); if (old) old.remove();
+  const el=document.elementFromPoint(ev.clientX, ev.clientY)?.closest?.('[data-panel],[data-part]'); if (!el) return;
+  const body=el.dataset.body, m=MD[body], panel=el.dataset.panel || m.partGeo[el.dataset.part]?.panel, p=m?.byId[panel]; if (!p) return;
+  const [x,y]=toSvg(ev), poly=ghostPoly(p, makePart(p,TOOL,[x-m.ox,y-m.oy]));
+  const g=document.createElementNS('http://www.w3.org/2000/svg','path');
+  g.id='ghost2d'; g.setAttribute('d','M'+poly.map(c=>`${f3(c[0]+m.ox)} ${f3(c[1]+m.oy)}`).join('L')+'Z');
+  g.setAttribute('fill','rgba(255,201,40,.18)'); g.setAttribute('stroke','#ffc928'); g.setAttribute('stroke-width','2'); g.setAttribute('vector-effect','non-scaling-stroke'); g.setAttribute('pointer-events','none');
+  $('#sheet').appendChild(g);
+}
+function addPart(bodyId, panelId, type, q){
+  const b=S.bodies.find(x=>x.id===bodyId), p=MD[bodyId]?.byId[panelId]; if(!b||!p) return;
+  remember(true);
+  const pt=makePart(p, type, q);
+  pt.id=nextId('p'); b.parts.push(pt); S.sel={kind:'part', body:b.id, part:pt.id};
+  setTool(''); update({all:true});
+}
+function addBody(kind){
+  remember(true);
+  const sel=S.sel?.body ? S.bodies.find(b=>b.id===S.sel.body) : null;
+  if (['mailer','tuckend','tray'].includes(kind)){ const b=newBody(kind); S.bodies.push(b); S.sel={kind:'body',body:b.id}; }
+  else if (kind==='tri'){ const b=newBody('prism',{name:'三角柱', W:140, D:170, opts:{n:3,close:'cap',tuck:true,r:8}}); S.bodies.push(b); S.sel={kind:'body',body:b.id}; }
+  else if (kind==='hex'){ const b=newBody('prism'); S.bodies.push(b); S.sel={kind:'body',body:b.id}; }
+  else if (kind==='tube'){ const b=newBody('prism',{name:'円筒', W:80, D:180, paper:'coat', opts:{n:32,close:'cap',tuck:false,r:6}}); S.bodies.push(b); S.sel={kind:'body',body:b.id}; }
+  else if (kind==='petal'){ const b=newBody('petalbox'); S.bodies.push(b); S.sel={kind:'body',body:b.id}; }
+  else if (kind==='chipbag'){ const b=newBody('flatbag',{name:'ミニチップス袋', W:90, H:115, outC:'#a9c3e0', opts:{style:'pillow', edge:'zig', seal:12, tear:false, tearPos:24, band:8, top:'open', topH:25}}); S.bodies.push(b); S.sel={kind:'body',body:b.id}; }
+  else if (kind==='tearbag'){ const b=newBody('flatbag'); S.bodies.push(b); S.sel={kind:'body',body:b.id}; }
+  else if (kind==='slide'){ const t=newBody('tray',{name:'中箱トレー', W:150,D:100,H:36}); S.bodies.push(t); const s=newBody('sleeve',{host:t.id}); S.bodies.push(s); S.sel={kind:'body',body:s.id}; }
+  else if (kind==='kabuse'){ const t=newBody('tray',{name:'身', W:150,D:150,H:50, paper:'white', t:.55, outC:'#fbfbf8', inC:'#f0f0ea'}); S.bodies.push(t); const l=newBody('lidover',{host:t.id, H:30, outC:'#2b2b2e'}); S.bodies.push(l); S.sel={kind:'body',body:l.id}; }
+  else {
+    const ok=HOSTS_FOR[kind];
+    let host = sel && ok.includes(sel.type) ? sel : (sel && sel.host && ok.includes(S.bodies.find(x=>x.id===sel.host)?.type) ? S.bodies.find(x=>x.id===sel.host) : S.bodies.find(b=>ok.includes(b.type)));
+    if (!host){ toast('先に郵送箱かトレーを追加してください'); return; }
+    const b=newBody(kind,{host:host.id}); S.bodies.push(b); S.sel={kind:'body',body:b.id};
+  }
+  $('#addMenu').open=false; sheetView=null;
+  update({all:true, frame:true});
+}
+function deleteBody(id){
+  remember(true);
+  const kill=new Set([id]); let grew=true; while(grew){ grew=false; for (const b of S.bodies) if (b.host && kill.has(b.host) && !kill.has(b.id)){ kill.add(b.id); grew=true; } }
+  S.bodies=S.bodies.filter(b=>!kill.has(b.id)); S.sel=S.bodies[0]?{kind:'body',body:S.bodies[0].id}:null;
+  update({all:true, frame:true});
+}
+function deletePart(bodyId, partId){
+  remember(true);
+  const b=S.bodies.find(x=>x.id===bodyId); if(!b) return; const pt=b.parts.find(x=>x.id===partId);
+  b.parts=b.parts.filter(x=>x.id!==partId); S.sel=pt?{kind:'panel',body:bodyId,panel:pt.panel}:{kind:'body',body:bodyId};
+  update({all:true});
+}
+
+/* ================= outliner & properties ================= */
+function renderTree(){
+  const sel=S.sel||{};
+  const roots=S.bodies.filter(b=>!b.host);
+  const row=(b,lvl)=>{
+    const m=MD[b.id], d=m?m.d:b;
+    let h=`<button type="button" class="ti${lvl?' l1':''}" data-sel="body" data-body="${b.id}" aria-current="${sel.kind==='body'&&sel.body===b.id}"><span class="dot" style="background:${b.outC}"></span><span class="nm">${esc(b.name)}</span><span class="ty">${TYPE[b.type].tag}</span></button>`;
+    for (const pt of b.parts){
+      const pn=m?.byId[pt.panel];
+      h+=`<button type="button" class="ti l2" data-sel="part" data-body="${b.id}" data-part="${pt.id}" aria-current="${sel.kind==='part'&&sel.part===pt.id}"><span class="nm">${PART[pt.type]}${pt.type==='text'?'「'+esc(pt.text)+'」':''}</span><span class="dm">${pn?pn.name:'—'}</span></button>`;
+    }
+    for (const c of S.bodies.filter(x=>x.host===b.id)) h+=row(c,lvl+1);
+    return h;
+  };
+  $('#tree').innerHTML = roots.length ? roots.map(b=>row(b,0)).join('') : '<p class="empty">まだ箱がありません。「＋ 追加」から始めましょう。</p>';
+  const notes=[]; for (const b of S.bodies){ const m=MD[b.id]; if(!m) continue; for (const n of m.notes) notes.push({...n, t:`${b.name}：${n.t}`}); }
+  $('#notes').innerHTML=(notes.length?notes:[{k:'ok',t:'問題は見つかりませんでした。'}]).map(n=>`<div class="note${n.k==='ok'?' ok':''}">${esc(n.t)}</div>`).join('');
+}
+const numF=(id,label,val,unit='mm',attrs='')=>`<label class="f">${label}<span class="num"><input type="number" id="${id}" value="${val}" step="any" ${attrs}><span>${unit}</span></span></label>`;
+function swatchRow(label,key,val){ return `<div class="colorrow"><span>${label}</span><div class="swatches">${SWATCHES.map(c=>`<button type="button" class="sw" data-color="${key}" data-c="${c}" style="background:${c}" aria-pressed="${c.toLowerCase()===val.toLowerCase()}" aria-label="${label} ${c}"></button>`).join('')}</div><input type="color" id="bc-${key}" value="${val}" aria-label="${label}の色"></div>`; }
+function renderProps(){
+  const sel=S.sel, box=$('#props');
+  if (!sel){ box.innerHTML='<div class="hd">プロパティ</div><p class="empty">左の構成か3Dから、箱・面・部品を選んでください。</p>'; return; }
+  const b=S.bodies.find(x=>x.id===sel.body); if(!b){ S.sel=null; return renderProps(); }
+  const m=MD[b.id];
+  if (sel.kind==='body'){
+    const host=S.bodies.find(x=>x.id===b.host), fit=!!TYPE[b.type].fit && host;
+    const autoLock = (k)=> fit && b.auto && ({sleeve:['W','D','H'], lidover:['W','D'], platform:['W','D'], divider:['W']}[b.type]||[]).includes(k);
+    const dv=k=>autoLock(k)?m.d[k]:b[k];
+    const labels = b.type==='flatbag'?{W:'幅',H:'高さ'}:b.type==='prism'?{W:'直径',D:'長さ'}:b.type==='petalbox'?{W:'底の直径',H:'高さ'}:b.type==='sleeve'?{W:'内幅',D:'長さ',H:'内高さ'}:b.type==='divider'?{W:'長さ',H:'高さ'}:b.type==='platform'?{W:'幅',D:'奥行き',H:'高さ'}:{W:'幅',D:'奥行き',H:'高さ'};
+    const dims = Object.entries(labels).map(([k,l])=>numF('bd-'+k,l,dv(k),'mm',autoLock(k)?'disabled':'min="5"')).join('');
+    let opts='';
+    if (b.type==='mailer') opts=`<label class="check"><input type="checkbox" id="bo-double" ${b.opts.double?'checked':''}><span>側面を二重にする</span></label>
+      <div class="rowx"><span>ロック爪</span><div class="seg" data-seg="tabs">${[0,1,2].map(v=>`<button type="button" data-v="${v}" aria-pressed="${b.opts.tabs===v}">${v||'なし'}</button>`).join('')}</div></div>
+      <div class="grid2">${numF('bo-tabW','爪の幅',b.opts.tabW)}${numF('bo-r','耳・差込みの角R',b.opts.r)}</div>`;
+    if (b.type==='tray'||b.type==='lidover') opts=`<label class="check"><input type="checkbox" id="bo-double" ${b.opts.double?'checked':''}><span>側面を二重にする</span></label>`;
+    if (b.type==='tuckend') opts=`<div class="grid2">${numF('bo-r','差込みの角R',b.opts.r)}</div><p class="hint">寝かせた向きで表示します（背面が下）。</p>`;
+    if (b.type==='sleeve') opts=`<label class="check"><input type="checkbox" id="bo-notch" ${b.opts.notch?'checked':''}><span>指かけの切り欠き</span></label><div class="grid2">${numF('bo-nr','切り欠き半径',b.opts.nr)}</div>`;
+    if (b.type==='platform') opts=`<div class="grid3">${numF('bo-cols','横の数',b.opts.cols,'個','min="1" step="1"')}${numF('bo-rows','縦の数',b.opts.rows,'個','min="1" step="1"')}${numF('bo-dia','穴の直径',b.opts.dia)}</div>`;
+    if (b.type==='prism'){ const inf=m.info||{}; opts=`<div class="grid2">${numF('bo-n','面の数',b.opts.n,'面','min="3" max="48" step="1"')}${numF('bo-r','差込みの角R',b.opts.r)}</div>
+      <div class="rowx"><span>端の閉じ方</span><div class="seg" data-seg="close"><button type="button" data-v="cap" aria-pressed="${b.opts.close!=='petal'}">端ぶた</button><button type="button" data-v="petal" aria-pressed="${b.opts.close==='petal'}">花びら</button></div></div>
+      ${b.opts.close!=='petal'&&!inf.curved?`<label class="check"><input type="checkbox" id="bo-tuck" ${b.opts.tuck!==false?'checked':''}><span>端ぶたに差込みを付ける</span></label>`:''}
+      <p class="hint">辺の長さ ${f3(inf.s||0)}mm。面の数を10以上にすると、折り目のない曲面の筒になります。3で三角柱、6で六角柱です。</p>`; }
+    if (b.type==='flatbag') opts=`<div class="rowx"><span>作り</span><div class="seg" data-seg="style"><button type="button" data-v="side" aria-pressed="${b.opts.style!=='pillow'}">底折り＋両サイド</button><button type="button" data-v="pillow" aria-pressed="${b.opts.style==='pillow'}">背貼り（チップス袋）</button></div></div>
+      <div class="rowx"><span>${b.opts.style==='pillow'?'上下の端':'口の端'}</span><div class="seg" data-seg="edge"><button type="button" data-v="straight" aria-pressed="${b.opts.edge!=='zig'}">まっすぐ</button><button type="button" data-v="zig" aria-pressed="${b.opts.edge==='zig'}">ギザギザ</button></div></div>
+      ${b.opts.style==='pillow'?`<div class="grid2">${numF('bo-seal','シール帯の幅',b.opts.seal??12)}</div><p class="hint">展開図の斜線部分が、のりで貼る範囲です（上下のシール帯と背中ののりしろ）。</p>`:''}
+      <label class="check"><input type="checkbox" id="bo-tear" ${b.opts.tear?'checked':''}><span>開封帯（ミシン目2本）を入れる</span></label>
+      <div class="grid2">${numF('bo-tearPos','上からの位置',b.opts.tearPos)}${numF('bo-band','帯の幅（0で1本）',b.opts.band)}</div>
+      ${b.opts.style==='pillow'?'':`<div class="rowx"><span>封の仕方</span><div class="seg" data-seg="top"><button type="button" data-v="flap" aria-pressed="${b.opts.top==='flap'}">のり付けふた</button><button type="button" data-v="open" aria-pressed="${b.opts.top!=='flap'}">テープ止め</button></div></div>
+      ${b.opts.top==='flap'?`<div class="grid2">${numF('bo-topH','ふたの高さ',b.opts.topH)}</div>`:''}`}
+      <p class="hint">開封帯は表面・裏面・のりしろを通して入り、右端に裂き始めの切り込みが付きます。表面の窓は裏面には抜けません。</p>`;
+    if (b.type==='petalbox') opts=`<div class="grid2">${numF('bo-n','花びらの数',b.opts.n,'枚','min="3" max="8" step="1"')}</div>
+      <label class="check"><input type="checkbox" id="bo-tab" ${b.opts.tab?'checked':''}><span>取っ手のタブと差込み口を付ける</span></label>
+      <p class="hint">花びらは高さと直径から長さと曲がり方を自動で決めます。</p>`;
+    if (b.type==='divider') opts=`<div class="rowx"><span>向き</span><div class="seg" data-seg="dir"><button type="button" data-v="W" aria-pressed="${b.opts.dir==='W'}">幅方向</button><button type="button" data-v="D" aria-pressed="${b.opts.dir==='D'}">奥行き方向</button></div></div><div class="grid2">${numF('bo-pos','位置（中心から）',b.opts.pos)}</div>`;
+    box.innerHTML=`
+      <div class="ptitle"><input id="b-name" value="${esc(b.name)}" aria-label="名前"></div>
+      <p class="psub">${TYPE[b.type].label}${host?`　→ ${esc(host.name)} に組み込み`:''}</p>
+      <div class="hd">寸法（内寸）</div>
+      <div class="stack">
+        ${fit?`<label class="check"><input type="checkbox" id="b-auto" ${b.auto?'checked':''}><span>${esc(host.name)}に合わせる</span></label>`:''}
+        <div class="grid3">${dims}</div>
+      </div>
+      <div class="hd">用紙</div>
+      <div class="stack">
+        <select id="b-paper" aria-label="紙の種類">${PAPERS.map(p=>`<option value="${p.id}"${p.id===b.paper?' selected':''}>${p.name}</option>`).join('')}</select>
+        <div class="grid2">${numF('b-t','紙厚',b.t,'mm','min="0.2" max="3" step="0.05"')}</div>
+        ${swatchRow('外側','outC',b.outC)}${swatchRow('内側','inC',b.inC)}
+      </div>
+      ${opts?`<div class="hd">構造</div><div class="stack">${opts}</div>`:''}
+      <div class="hd">部品</div>
+      <p class="hint">${b.parts.length?`${b.parts.length}個の部品があります。`:'まだ部品はありません。'}面を選ぶか、上のツールで面をクリックすると追加できます。</p>
+      <div class="hd">書き出し</div>
+      <div class="btnrow"><button type="button" class="btn primary" id="saveOne">この箱をSVG保存</button><button type="button" class="btn danger" id="delBody">箱を削除</button></div>`;
+    return;
+  }
+  if (sel.kind==='panel'){
+    const p=m?.byId[sel.panel]; if(!p){ S.sel={kind:'body',body:b.id}; return renderProps(); }
+    const here=b.parts.filter(x=>x.panel===p.id);
+    box.innerHTML=`<div class="ptitle"><input value="${esc(p.name)}" disabled aria-label="面"></div>
+      <p class="psub">${esc(b.name)} の面　${Math.round(p.fr.ew||0)}×${Math.round(p.fr.eh||0)}mm</p>
+      <div class="hd">この面に追加</div>
+      <div class="addgrid">${Object.entries(PART).map(([k,v])=>`<button type="button" class="btn" data-addpart="${k}">＋ ${v}</button>`).join('')}</div>
+      <div class="hd">この面の部品</div>
+      <div class="plist">${here.length?here.map(x=>`<button type="button" class="ti" data-sel="part" data-body="${b.id}" data-part="${x.id}"><span class="nm">${PART[x.type]}${x.type==='text'?'「'+esc(x.text)+'」':''}</span></button>`).join(''):'<p class="empty">まだありません。</p>'}</div>
+      <p class="hint"><a href="#" class="link" data-sel="body" data-body="${b.id}">${esc(b.name)}の設定へ戻る</a></p>`;
+    return;
+  }
+  const pt=b.parts.find(x=>x.id===sel.part); if(!pt){ S.sel={kind:'body',body:b.id}; return renderProps(); }
+  const p=m?.byId[pt.panel];
+  let f='';
+  if (pt.type==='window') f=`<label class="f">形<select id="pp-shape">${Object.entries(SHAPES).map(([k,v])=>`<option value="${k}"${k===pt.shape?' selected':''}>${v}</option>`).join('')}</select></label>
+     <div class="grid2">${numF('pp-w','幅',pt.w)}${numF('pp-h','高さ',pt.h)}${pt.shape==='rect'?numF('pp-r','角R',pt.r):''}</div>`;
+  if (pt.type==='handle') f=`<div class="grid2">${numF('pp-w','幅',pt.w)}${numF('pp-h','高さ',pt.h)}</div>`;
+  if (pt.type==='hang') f=`<div class="grid3">${numF('pp-w','全幅',pt.w)}${numF('pp-h','スロット幅',pt.h)}${numF('pp-dia','中央の穴',pt.dia)}</div>`;
+  if (pt.type==='perf'){ const an=perfAngle(pt); f=`<div class="grid2">${numF('pp-ang','角度',an,'°','step="1"')}<label class="f">回転<input type="range" id="pp-angR" min="-90" max="90" step="1" value="${((an+90)%180+180)%180-90}" style="accent-color:var(--accent)"></label></div>
+     <div class="rowx"><span>よく使う角度</span><div class="seg" data-seg="pang">${[0,45,90,-45].map(v=>`<button type="button" data-v="${v}" aria-pressed="${an===v}">${v}°</button>`).join('')}</div></div>
+     <p class="hint">選択中に <span class="kbd">R</span> で15°、<span class="kbd">Shift</span>+<span class="kbd">R</span> で逆回り。</p>
+     <div class="grid2">${numF('pp-band','帯の幅（0で1本）',pt.band)}</div>`; }
+  if (pt.type==='text') f=`<label class="f">文字<input class="txt" id="pp-text" value="${esc(pt.text)}"></label>
+     <div class="grid2">${numF('pp-size','文字の高さ',pt.size)}<label class="f">色<input type="color" id="pp-color" value="${pt.color}"></label></div>`;
+  const posF = numF('pp-u','左右（右が＋）',pt.u)+numF('pp-v','上下（上が＋）',pt.v);
+  box.innerHTML=`<div class="ptitle"><input value="${PART[pt.type]}" disabled aria-label="部品"></div>
+    <p class="psub">${esc(b.name)} ／ ${p?esc(p.name):'面なし'}</p>
+    <div class="hd">形と大きさ</div><div class="stack">${f}</div>
+    <div class="hd">位置（面の中心から）</div><div class="grid2">${posF}</div>
+    <p class="hint">3Dか展開図でドラッグしても動かせます。</p>
+    <div class="btnrow"><button type="button" class="btn" data-sel="panel" data-body="${b.id}" data-panel="${pt.panel}">面を選択</button><button type="button" class="btn danger" id="delPart">部品を削除</button></div>`;
+}
+function bindProps(){
+  const box=$('#props');
+  box.addEventListener('input',ev=>{
+    const el=ev.target, sel=S.sel; if(!sel) return;
+    const b=S.bodies.find(x=>x.id===sel.body); if(!b) return;
+    const id=el.id, num=+el.value;
+    const commit=(fn,opts={props:false})=>{ remember(); fn(); update(opts); };
+    if (id==='b-name') return commit(()=>{ b.name=el.value||TYPE[b.type].label; }, {props:false});
+    if (id.startsWith('bd-')){ if(!isFinite(num)||num<5) return; return commit(()=>{ b[id.slice(3)]=num; }); }
+    if (id==='b-t'){ if(!isFinite(num)||num<0.1||num>3) return; return commit(()=>{ b.t=num; }); }
+    if (id==='bc-outC'||id==='bc-inC'){ return commit(()=>{ b[id.slice(3)]=el.value; }); }
+    if (id.startsWith('bo-')){ const k=id.slice(3); if (el.type==='checkbox') return commit(()=>{ b.opts[k]=el.checked; }); if(!isFinite(num)) return; return commit(()=>{ b.opts[k]= (k==='cols'||k==='rows')?Math.max(1,Math.round(num)):k==='n'?clampInt(num,3,b.type==='petalbox'?8:48):num; }); }
+    if (id==='b-auto') return commit(()=>{ b.auto=el.checked; }, {all:true});
+    if (id.startsWith('pp-')){
+      const pt=b.parts.find(x=>x.id===sel.part); if(!pt) return; const k=id.slice(3);
+      if (k==='text'||k==='color') return commit(()=>{ pt[k]=el.value; });
+      if (k==='shape') return commit(()=>{ pt.shape=el.value; }, {all:true});
+      if (k==='ang'||k==='angR'){ if(!isFinite(num)) return; return commit(()=>{ pt.ang=num; delete pt.dir; const o=document.getElementById(k==='ang'?'pp-angR':'pp-ang'); if(o) o.value=k==='ang'?((num+90)%180+180)%180-90:num; markAngSeg(num); }); }
+      if (!isFinite(num)) return;
+      if (['w','h','size','dia'].includes(k) && num<1) return;
+      return commit(()=>{ pt[k]=num; });
+    }
+  });
+  box.addEventListener('change',ev=>{
+    const el=ev.target, sel=S.sel; if(!sel) return; const b=S.bodies.find(x=>x.id===sel.body); if(!b) return;
+    if (el.id==='b-paper'){ remember(true); const p=paperOf(el.value); b.paper=p.id; b.t=p.t; b.outC=p.out; b.inC=p.inn; update({all:true}); }
+    if ((el.type==='checkbox' && el.id.startsWith('bo-')) || el.id==='bo-n') update({all:true});
+  });
+  box.addEventListener('click',ev=>{
+    const el=ev.target.closest('button,a'); if(!el) return; const sel=S.sel; if(!sel) return;
+    const b=S.bodies.find(x=>x.id===sel.body);
+    if (el.dataset.sel){ ev.preventDefault(); selectFrom(el); return; }
+    if (el.dataset.color){ remember(true); b[el.dataset.color]=el.dataset.c; update({all:true}); return; }
+    if (el.closest('[data-seg]')){ const seg=el.closest('[data-seg]').dataset.seg, v=el.dataset.v; remember(true);
+      if (seg==='tabs') b.opts.tabs=+v; if (seg==='dir') b.opts.dir=v; if (seg==='close') b.opts.close=v; if (seg==='top') b.opts.top=v; if (seg==='style') b.opts.style=v; if (seg==='edge') b.opts.edge=v;
+      if (seg==='pang'){ const pt=b.parts.find(x=>x.id===sel.part); pt.ang=+v; delete pt.dir; }
+      update({all:true, frame:seg==='dir'}); return; }
+    if (el.dataset.addpart){ addPart(b.id, sel.panel, el.dataset.addpart, null); return; }
+    if (el.id==='delPart'){ deletePart(b.id, sel.part); return; }
+    if (el.id==='delBody'){ if (!el.classList.contains('armed')){ el.classList.add('armed'); el.textContent='もう一度押すと削除'; setTimeout(()=>{ if(el.isConnected){ el.classList.remove('armed'); el.textContent='箱を削除'; } },2500); return; } deleteBody(b.id); return; }
+    if (el.id==='saveOne'){ const ids=[b.id, ...S.bodies.filter(x=>x.host===b.id).map(x=>x.id)]; saveSvg(ids); return; }
+  });
+}
+function markAngSeg(v){ document.querySelectorAll('[data-seg="pang"] button').forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.v===+v))); }
+function selectFrom(el){
+  const k=el.dataset.sel, body=el.dataset.body;
+  S.sel = k==='body' ? {kind:'body',body} : k==='part' ? {kind:'part',body,part:el.dataset.part} : {kind:'panel',body,panel:el.dataset.panel};
+  update({all:true});
+}
+
+/* ================= update loop ================= */
+function update(o={}){
+  buildAll();
+  drawSheet();
+  build3D();
+  if (o.frame) frameCamera();
+  if (o.tree!==false) renderTree();
+  if (o.all || o.props) renderProps();
+  syncHistBtns();
+  persist();
+}
+
+/* ================= fold animation ================= */
+let playing=null;
+function stopPlay(){ if(playing){ cancelAnimationFrame(playing); playing=null; } $('#playIcon').setAttribute('d','M3 1.5v11l9-5.5z'); }
+function animateTo(target, from=S.fold, dur){
+  stopPlay();
+  dur = dur || Math.max(500, Math.abs(target-from)*3200);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches){ S.fold=target; $('#fold').value=target*1000; applyFold(target); persist(); return; }
+  $('#playIcon').setAttribute('d','M3 1.5h3v11H3zM8 1.5h3v11H8z');
+  const t0=performance.now();
+  const step=now=>{ const k=Math.min(1,(now-t0)/dur); S.fold=from+(target-from)*k; $('#fold').value=S.fold*1000; applyFold(S.fold);
+    if (k<1) playing=requestAnimationFrame(step); else { playing=null; $('#playIcon').setAttribute('d','M3 1.5v11l9-5.5z'); persist(); } };
+  playing=requestAnimationFrame(step);
+}
+
+/* ================= export ================= */
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2400); }
+function showSvg(svg){ const ta=$('#svgOut'); ta.value=svg; ta.hidden=false; ta.focus(); ta.select(); }
+async function saveSvg(ids){
+  const svg=exportSvg(ids);
+  const one = ids.length===1 ? S.bodies.find(b=>b.id===ids[0]) : null;
+  const name = one ? `${one.type}_${Math.round(MD[one.id].d.W)}x${Math.round(MD[one.id].d.D)}x${Math.round(MD[one.id].d.H)}.svg` : 'package_dielines.svg';
+  let dl=null; try{ dl = window.claude?.use ? await window.claude.use('downloads') : null; }catch(e){}
+  if (!dl && !window.claude){ const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'})); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000); toast('SVGを保存しました'); return; }
+  if (!dl){ showSvg(svg); toast('この画面では保存できないため、右下にSVGコードを表示しました'); return; }
+  try{ await dl.save({filename:name, data:svg}); toast('SVGを保存しました'); }
+  catch(e){ if (e?.code==='declined') return; showSvg(svg); toast('保存できなかったため、SVGコードを表示しました'); }
+}
+function copySvg(){
+  const svg=exportSvg(S.bodies.map(b=>b.id));
+  const p = navigator.clipboard?.writeText ? navigator.clipboard.writeText(svg) : Promise.reject();
+  p.then(()=>toast('SVGをコピーしました')).catch(()=>{ showSvg(svg); toast('コードを選択しました。手動でコピーしてください'); });
+}
+
+/* ================= init ================= */
+function init(){
+  $('#crease').value=S.crease||'solid';
+  $('#crease').addEventListener('change',e=>{ S.crease=e.target.value; drawSheet(); persist(); });
+  document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>addBody(b.dataset.add)));
+  document.addEventListener('click',e=>{ const m=$('#addMenu'); if (m.open && !m.contains(e.target)) m.open=false; });
+  $('#tree').addEventListener('click',e=>{ const el=e.target.closest('[data-sel]'); if(el) selectFrom(el); });
+  document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool===TOOL?'':b.dataset.tool)));
+  $('#undo').addEventListener('click',undo); $('#redo').addEventListener('click',redo);
+  const fold=$('#fold'); fold.value=S.fold*1000;
+  fold.addEventListener('input',()=>{ stopPlay(); S.fold=fold.value/1000; applyFold(S.fold); persist(); });
+  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>animateTo(+b.dataset.go)));
+  $('#play').addEventListener('click',()=>{ if(playing){ stopPlay(); return; } animateTo(1, S.fold>=0.999?0:S.fold, 6000); });
+  $('#resetView').addEventListener('click',frameCamera);
+  $('#saveAll').addEventListener('click',()=>saveSvg(S.bodies.map(b=>b.id)));
+  $('#copyAll').addEventListener('click',copySvg);
+  document.addEventListener('keydown',e=>{
+    const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||'');
+    if (e.key==='Escape'){ setTool(''); $('#addMenu').open=false; }
+    if (typing) return;
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z'){ e.preventDefault(); e.shiftKey?redo():undo(); }
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); }
+    if (e.key.toLowerCase()==='r' && !e.ctrlKey && !e.metaKey && S.sel?.kind==='part'){
+      const b=S.bodies.find(x=>x.id===S.sel.body), pt=b?.parts.find(x=>x.id===S.sel.part);
+      if (pt && pt.type==='perf'){ e.preventDefault(); remember(true); let a=perfAngle(pt)+(e.shiftKey?-15:15); a=((a+180)%360+360)%360-180; pt.ang=a; delete pt.dir; update({all:true}); }
+    }
+    if ((e.key==='Delete'||e.key==='Backspace') && S.sel?.kind==='part'){ e.preventDefault(); deletePart(S.sel.body,S.sel.part); }
+  });
+  bindProps(); bindSheet(); initGL();
+  update({all:true, frame:true});
+  if (document.fonts?.ready) document.fonts.ready.then(()=>{ texCache.clear(); update({all:true}); });
+}
+init();
+})();
+</script>
+
+</body>
+</html>
